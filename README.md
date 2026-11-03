@@ -16,13 +16,13 @@ Os dados vêm de fontes públicas de terceiros e são mostrados como estão. Pod
 
 ## Privacidade
 
-Sem cadastro, servidor próprio, anúncios ou rastreamento. A localização só é usada com permissão e é enviada apenas aos serviços de rota e endereço (OpenStreetMap/FOSSGIS) quando você pede uma rota.
+Sem cadastro, servidor próprio, anúncios ou rastreamento. A localização só é usada com permissão e é enviada apenas aos serviços de rota e endereço (OpenStreetMap/FOSSGIS e Photon/komoot) quando você pede uma rota.
 
 ## Fontes e licenças
 
 - Câmeras: painel público "Fiscalização Eletrônica – CET" (CET-SP), consultado no navegador de quem usa o app.
 - Mapa e dados viários: © colaboradores do OpenStreetMap, ODbL — https://www.openstreetmap.org/copyright
-- Rotas: Valhalla (servidor público da FOSSGIS e.V.). Endereços: Nominatim.
+- Rotas: Valhalla (servidor público da FOSSGIS e.V.). Endereços: Photon (komoot) e Nominatim.
 - Leaflet (BSD-2).
 - Código deste repositório: licença MIT.
 

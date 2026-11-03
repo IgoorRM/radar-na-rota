@@ -17,9 +17,11 @@
 :root { --bg:#f3f4f2; --panel:#fff; --fg:#1d2421; --muted:#5d6763; --line:#d9dddb; --rota:#1764c4; --cam:#d1222f; --ok:#1f7a4a; --okbg:#e1f2e8; --warnbg:#fbe3e5; }
 @media (prefers-color-scheme: dark) { :root { --bg:#141917; --panel:#1c2220; --fg:#e8ece9; --muted:#9aa5a0; --line:#2e3633; --rota:#5aa2ff; --cam:#ff5b67; --ok:#5fd197; --okbg:#173326; --warnbg:#3a1d20; color-scheme: dark; } }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
-#mapa { position: fixed; inset: 0; }
+/* z-index 0 isola as camadas do Leaflet: no Safari, camadas 3D do mapa podem "roubar" toques do painel */
+#mapa { position: fixed; inset: 0; z-index: 0; }
 /* painel inferior estilo "bottom sheet" */
 #painel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; background: var(--panel); border-radius: 16px 16px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,.18);
   max-height: 78vh; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); transition: max-height .2s; }
@@ -37,6 +39,7 @@ button.ico { padding: 10px 12px; flex: none; }
 button:disabled { opacity: .55; }
 .acoes { display: flex; gap: 8px; }
 .sug { display: grid; gap: 2px; }
+.sug:empty { display: none; }
 .sug button { text-align: left; font-weight: 400; font-size: 14px; padding: 10px; border-radius: 8px; }
 details summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
 .tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 6px; font-size: 14px; }
@@ -120,7 +123,7 @@ a { color: var(--rota); }
       <h3>Privacidade (LGPD)</h3>
       <ul>
         <li>O app não tem cadastro, login, servidor próprio, anúncios, cookies de rastreamento nem coleta de estatísticas.</li>
-        <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (OpenStreetMap/FOSSGIS) no momento em que você pede uma rota ou um endereço.</li>
+        <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (OpenStreetMap/FOSSGIS e Photon/komoot) no momento em que você pede uma rota ou um endereço.</li>
         <li>O app guarda no próprio aparelho (armazenamento local do navegador) apenas suas preferências e uma cópia da lista pública de câmeras. Para apagar, limpe os dados do site no navegador.</li>
         <li>Os serviços de terceiros recebem seu endereço IP e seguem as próprias políticas de privacidade.</li>
       </ul>
@@ -129,7 +132,7 @@ a { color: var(--rota); }
         <li>Câmeras: painel público "Fiscalização Eletrônica – CET" da Companhia de Engenharia de Tráfego de São Paulo, consultado a cada uso. Só equipamentos fixos ativos na cidade de São Paulo.</li>
         <li>Mapa e dados viários: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>, licença ODbL.</li>
         <li>Rotas: <a href="https://valhalla.github.io/valhalla/" target="_blank" rel="noopener">Valhalla</a>, servidor público mantido pela FOSSGIS e.V.</li>
-        <li>Endereços: <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a> / OpenStreetMap.</li>
+        <li>Busca de endereços: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a> (komoot) e <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a>, com dados do OpenStreetMap.</li>
         <li>Biblioteca de mapa: <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a> (licença BSD-2).</li>
       </ul>
       <p>Se alguma fonte pedir a retirada dos dados, eles serão removidos. Código aberto sob licença MIT.</p>
@@ -142,7 +145,7 @@ a { color: var(--rota); }
 // ================= configuração =================
 const PBI = { key: "d8b9566c-25e1-4f66-a54b-ae3b02bda6e7", host: "https://wabi-brazil-south-b-primary-api.analysis.windows.net", modelo: 6865047 };
 const VALHALLA = "https://valhalla1.openstreetmap.de/route";
-const NOMINATIM = "https://nominatim.openstreetmap.org/search";
+const PHOTON = "https://photon.komoot.io/api/";
 const HIT_M = 30, CORREDOR_M = 600, MAX_EXCLUIR = 50, TENTATIVAS = 4, ALERTA_M = 300, CACHE_DIAS = 7;
 const LEG = { R: "Rodízio", V: "Velocidade", A: "Avanço de semáforo", P: "Parada sobre a faixa", EXD: "Faixa exclusiva (dir.)", EXE: "Faixa exclusiva (esq.)",
   MT: "Motocicletas", CPD: "Conversão proib. dir.", CPE: "Conversão proib. esq.", S: "Trânsito seletivo", F: "ZMRF – Fretado", Z: "ZMRC – Caminhão", VR: "VER – Caminhão", PR: "Faixa proib. caminhão" };
@@ -303,23 +306,65 @@ map.on("click", e => {
   if (k) marcar(k, e.latlng.lat, e.latlng.lng, `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`);
 });
 
-// ================= busca de endereço (ao apertar Enter/Buscar, respeitando o limite do Nominatim) =================
-async function buscar(k) {
-  const q = $(k).value.trim(), box = $(k + "-sug");
-  if (q.length < 3) return;
-  box.innerHTML = `<small>Buscando…</small>`;
+// ================= busca de endereço com sugestões enquanto digita (Photon, feito para autocompletar) =================
+function nomeEndereco(p) {
+  const rua = p.street ? [p.street, p.housenumber].filter(Boolean).join(", ") : "";
+  const principal = p.name && p.name !== p.street ? p.name : rua;
+  const extra = [p.name && p.name !== p.street ? rua : "", p.district || p.locality, p.city].filter(Boolean);
+  return { titulo: principal || extra.shift() || "Endereço", detalhe: extra.join(" · ") };
+}
+async function photon(q, limit = 6) {
+  const c = map.getCenter();
+  const p = new URLSearchParams({ q, limit, lat: c.lat.toFixed(4), lon: c.lng.toFixed(4), bbox: "-47.0,-23.85,-46.2,-23.25" });
+  const r = await fetch(PHOTON + "?" + p);
+  if (!r.ok) throw new Error("busca respondeu " + r.status);
+  return (await r.json()).features.map(f => ({ ...nomeEndereco(f.properties), lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }));
+}
+function escolher(k, it) {
+  marcar(k, it.lat, it.lon, it.detalhe ? `${it.titulo}, ${it.detalhe}` : it.titulo);
+  $(k + "-sug").innerHTML = "";
+  map.setView([it.lat, it.lon], 16);
+}
+const seq = { o: 0, d: 0 };
+async function sugerir(k) {
+  const q = $(k).value.trim(), box = $(k + "-sug"), n = ++seq[k];
+  if (q.length < 3) { box.innerHTML = ""; return; }
   try {
-    const p = new URLSearchParams({ q, format: "json", limit: 5, countrycodes: "br", viewbox: "-46.83,-23.36,-46.36,-23.99", "accept-language": "pt-BR" });
-    const r = await (await fetch(NOMINATIM + "?" + p)).json();
-    box.innerHTML = r.length ? "" : `<small>Nada encontrado. Tente com número e bairro.</small>`;
-    for (const it of r) {
-      const b = document.createElement("button"); b.textContent = it.display_name;
-      b.onclick = () => { marcar(k, +it.lat, +it.lon, it.display_name.split(",").slice(0, 3).join(",")); box.innerHTML = ""; map.setView([+it.lat, +it.lon], 16); };
+    const lista = await photon(q);
+    if (n !== seq[k]) return; // chegou resposta de uma digitação antiga
+    box.innerHTML = lista.length ? "" : `<small>Nada encontrado. Tente com número e bairro.</small>`;
+    for (const it of lista) {
+      const b = document.createElement("button"); b.type = "button";
+      b.innerHTML = `<b></b><br><small></small>`;
+      b.querySelector("b").textContent = it.titulo; b.querySelector("small").textContent = it.detalhe;
+      b.addEventListener("click", () => escolher(k, it));
       box.appendChild(b);
     }
-  } catch { box.innerHTML = `<small>Sem conexão com a busca de endereços.</small>`; }
+  } catch { if (n === seq[k]) box.innerHTML = `<small>Sem conexão com a busca de endereços.</small>`; }
 }
-for (const k of ["o", "d"]) $(k).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $(k).blur(); buscar(k); } });
+for (const k of ["o", "d"]) {
+  let t;
+  $(k).addEventListener("input", () => {
+    pts[k] = null; if (marks[k]) { map.removeLayer(marks[k]); marks[k] = null; } // texto mudou: ponto antigo não vale mais
+    clearTimeout(t); t = setTimeout(() => sugerir(k), 350);
+  });
+  $(k).addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    e.preventDefault(); clearTimeout(t);
+    const primeiro = $(k + "-sug").querySelector("button");
+    if (primeiro) primeiro.click(); else sugerir(k);
+  });
+}
+// se a pessoa digitou mas não tocou numa sugestão, usa o primeiro resultado
+async function garantirPonto(k) {
+  if (pts[k]) return true;
+  const q = $(k).value.trim();
+  if (q.length < 3) return false;
+  const [it] = await photon(q, 1);
+  if (!it) return false;
+  escolher(k, it);
+  return true;
+}
 
 // ================= GPS =================
 let gpsWatch = null, gpsMark = null, seguir = false, ultimaPos = null, avisadas = new Set();
@@ -395,11 +440,19 @@ $("naoLocal").onclick = () => responderLocal(false);
 
 // ================= tela =================
 async function calcular() {
-  if (!pts.o || !pts.d) { $("saida").innerHTML = `<div class="res ruim">Escolha a saída e o destino (busque com Enter ou toque no mapa).</div>`; return; }
-  if (!CAMERAS.length) { $("saida").innerHTML = `<div class="res ruim">A base de câmeras ainda não carregou.</div>`; return; }
-  const tipos = tiposMarcados();
   $("calc").disabled = true; $("calc").textContent = "Calculando…";
-  try { mostrar(await calcularRota(pts.o, pts.d, tipos)); }
+  try {
+    let okO = false, okD = false;
+    try { okO = await garantirPonto("o"); okD = await garantirPonto("d"); } catch {}
+    if (!okO || !okD) { $("saida").innerHTML = `<div class="res ruim">Não achei ${!okO ? "a saída" : "o destino"}. Digite o endereço e toque numa das sugestões, ou toque no mapa.</div>`; return; }
+    if (!CAMERAS.length) {
+      $("saida").innerHTML = `<div class="dica">Baixando a base de câmeras da CET…</div>`;
+      try { info(await carregarCameras()); } catch (e) { $("saida").innerHTML = `<div class="res ruim">Não consegui baixar a base de câmeras da CET (${e.message}). Confira a internet e tente de novo.</div>`; return; }
+    }
+    const tipos = tiposMarcados();
+    $("saida").innerHTML = `<div class="dica">Calculando a rota e conferindo as câmeras…</div>`;
+    mostrar(await calcularRota(pts.o, pts.d, tipos));
+  }
   catch (e) { $("saida").innerHTML = `<div class="res ruim">Não consegui calcular: ${e.message}. O servidor de rotas é público e às vezes limita pedidos; tente de novo em alguns segundos.</div>`; }
   finally { $("calc").disabled = false; $("calc").textContent = "Calcular rota"; }
 }
