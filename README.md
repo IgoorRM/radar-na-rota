@@ -22,9 +22,9 @@ Sem cadastro, servidor próprio, anúncios ou rastreamento. A localização só 
 
 ## Fontes e licenças
 
-- Câmeras: painel público "Fiscalização Eletrônica – CET" (CET-SP), consultado no navegador de quem usa o app.
+- Câmeras: painel público "Fiscalização Eletrônica – CET" (CET-SP), consultado no navegador de quem usa o app, completado com radares de velocidade cadastrados no OpenStreetMap (cópia em `radares_osm.json`, ODbL).
 - Mapa e dados viários: © colaboradores do OpenStreetMap, ODbL — https://www.openstreetmap.org/copyright
-- Rotas: Valhalla (servidor público da FOSSGIS e.V.). Endereços: Photon (komoot) e Nominatim.
+- Rotas: OSRM (servidor de demonstração) para caminhos e tempo sem trânsito; Valhalla (servidor público da FOSSGIS e.V.) para instruções e desvio de radares. Endereços: Photon (komoot) e Nominatim.
 - Desenho do mapa: OpenFreeMap / OpenMapTiles (dados do OpenStreetMap). Biblioteca de mapa: MapLibre GL JS (BSD-3).
 - Código deste repositório: licença MIT.
 

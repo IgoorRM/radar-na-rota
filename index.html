@@ -177,7 +177,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
 <div id="popRadar" class="modal" hidden><section class="caixa">
   <b style="font-size:19px">Base de radares</b>
   <p id="popInfo">Carregando…</p>
-  <p class="dica">A lista vem do painel público da CET-SP. Atualize de vez em quando para incluir câmeras novas e tirar as desativadas.</p>
+  <p class="dica">A lista vem do painel público da CET-SP, completada com radares cadastrados no OpenStreetMap. Atualize de vez em quando para incluir câmeras novas e tirar as desativadas.</p>
   <div class="acoes"><button class="prim" id="popAtualizar">Atualizar agora</button><button id="popFechar">Fechar</button></div>
 </section></div>
 
@@ -207,7 +207,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
       <button id="limparD" aria-label="Apagar destino" hidden>✕</button></div>
     <div id="sugs"></div>
     <div id="msgBusca"></div>
-    <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas Valhalla/FOSSGIS · câmeras CET-SP</div>
+    <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas OSRM e Valhalla/FOSSGIS · câmeras CET-SP</div>
   </div>
 </section>
 <div id="escolhaMapa" hidden><span id="escolhaTxt">Toque no mapa para marcar o destino</span><button id="cancelaMapa">Cancelar</button></div>
@@ -221,12 +221,13 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
   <div class="alca" id="alcaRotas"></div>
   <div class="rolar">
     <div id="cards"></div>
+    <small class="dica" id="notaTempo" hidden>Tempos estimados sem trânsito: no horário de pico a viagem pode demorar mais.</small>
     <div id="detalhe" class="extra" hidden></div>
     <div id="msgRotas"></div>
     <button class="prim" id="btnIr" disabled>Ir</button>
     <div class="links extra"><a href="#" id="btnSimular">▶ Simular</a><a href="#" id="btnGmaps">Google Maps</a><a href="#" id="verPassos">Passo a passo</a></div>
     <details id="passos" class="extra" hidden><summary>Passo a passo</summary><ol id="listaPassos"></ol></details>
-    <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas Valhalla/FOSSGIS · câmeras CET-SP</div>
+    <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas OSRM e Valhalla/FOSSGIS · câmeras CET-SP</div>
   </div>
 </section>
 
@@ -244,7 +245,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
     <div id="navCentro"><b id="navChegada">--:--</b><small><span id="navMin">–</span> · <span id="navKm">–</span> · <span id="navRad" class="zero"><span id="navRadN">0</span> radares</span></small></div>
     <div><button id="btnSair" class="redondo" aria-label="Sair da navegação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="rotulo">Sair</div></div>
   </div>
-  <div id="creditoNav">© OpenStreetMap · OpenFreeMap · OpenMapTiles · Valhalla · CET-SP</div>
+  <div id="creditoNav">© OpenStreetMap · OpenFreeMap · OpenMapTiles · OSRM · Valhalla · CET-SP</div>
 </section>
 
 <!-- ===== ajustes ===== -->
@@ -278,7 +279,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
       <h3>Privacidade (LGPD)</h3>
       <ul>
         <li>O app não tem cadastro, login, servidor próprio, anúncios, cookies de rastreamento nem coleta de estatísticas.</li>
-        <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (OpenStreetMap/FOSSGIS e Photon/komoot) quando você pede uma rota, um endereço, ou quando a rota é recalculada durante a navegação.</li>
+        <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (OSRM, OpenStreetMap/FOSSGIS e Photon/komoot) quando você pede uma rota, um endereço, ou quando a rota é recalculada durante a navegação.</li>
         <li>O app guarda no próprio aparelho (armazenamento local do navegador) apenas suas preferências e uma cópia da lista pública de câmeras. O trajeto não é gravado. Para apagar, limpe os dados do site no navegador.</li>
         <li>As falas da navegação são geradas pelo próprio aparelho.</li>
         <li>Os serviços de terceiros recebem seu endereço IP e seguem as próprias políticas de privacidade.</li>
@@ -286,8 +287,9 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
       <h3>Fontes e créditos</h3>
       <ul>
         <li>Câmeras: painel público "Fiscalização Eletrônica – CET" da Companhia de Engenharia de Tráfego de São Paulo. Só equipamentos fixos ativos na cidade de São Paulo.</li>
+        <li>Radares extras: pontos de radar de velocidade (highway=speed_camera) cadastrados por voluntários no <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, numa cópia guardada no app, quando não constam do painel da CET.</li>
         <li>Mapa, dados viários e limites de velocidade: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>, licença ODbL. Desenho do mapa: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> e <a href="https://openmaptiles.org" target="_blank" rel="noopener">OpenMapTiles</a>.</li>
-        <li>Rotas: <a href="https://valhalla.github.io/valhalla/" target="_blank" rel="noopener">Valhalla</a>, servidor público mantido pela FOSSGIS e.V.</li>
+        <li>Rotas: <a href="https://project-osrm.org/" target="_blank" rel="noopener">OSRM</a> (servidor de demonstração do projeto) para os caminhos e o tempo estimado, e <a href="https://valhalla.github.io/valhalla/" target="_blank" rel="noopener">Valhalla</a>, servidor público mantido pela FOSSGIS e.V., para as instruções e o desvio de radares.</li>
         <li>Busca de endereços: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a> (komoot) e <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a>, com dados do OpenStreetMap.</li>
         <li>Biblioteca de mapa: <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> (BSD-3).</li>
       </ul>
@@ -371,10 +373,27 @@ async function baixarCameras() {
   }
   return cams;
 }
+// 2ª fonte: radares de velocidade cadastrados por voluntários no OpenStreetMap (Grande São Paulo).
+// Entram só os que não estão a menos de 50 m de um equipamento da CET.
+// cópia da lista do OpenStreetMap guardada no próprio app (o servidor público Overpass é instável)
+async function baixarOsm() {
+  const r = await fetch("radares_osm.json", { cache: "no-cache" });
+  if (!r.ok) throw new Error("lista do OpenStreetMap indisponível");
+  return (await r.json()).radares;
+}
+function juntarFontes(cet, osm) {
+  const extra = osm.filter(o => !cet.some(c => Math.abs(c.lat - o.lat) < .001 && Math.abs(c.lon - o.lon) < .001 && distM([c.lat, c.lon], [o.lat, o.lon]) < 50));
+  return cet.concat(extra);
+}
 async function carregarCameras(forcar = false) {
-  const c = store.get("cameras", null);
+  const c = store.get("cameras2", null);
   if (!forcar && c && Date.now() - c.em < CACHE_DIAS * 864e5) { CAMERAS = c.lista; return c.em; }
-  try { const lista = await baixarCameras(); store.set("cameras", { em: Date.now(), lista }); CAMERAS = lista; return Date.now(); }
+  try {
+    const [cet, osm] = await Promise.all([baixarCameras(), baixarOsm().catch(() => (c ? c.lista.filter(x => x.fonte === "OSM") : []))]);
+    const em = Date.now();
+    CAMERAS = juntarFontes(cet, osm); store.set("cameras2", { em, lista: CAMERAS });
+    return em;
+  }
   catch (e) { if (c) { CAMERAS = c.lista; return c.em; } throw e; }
 }
 let promCameras = null;
@@ -420,7 +439,10 @@ function camerasNaRota(linha, tipos, raio = HIT_M) {
   return out;
 }
 
-// ================= rotas (Valhalla) =================
+// ================= rotas =================
+// OSRM (servidor de demonstração do projeto OSRM) escolhe os caminhos e estima o tempo sem trânsito, parecido com apps de navegação.
+// Valhalla (FOSSGIS) refaz o mesmo caminho para gerar as instruções de voz em português, e desvia de radares.
+const OSRM = "https://router.project-osrm.org/route/v1/driving/";
 function lerTrip(trip) {
   let linha = [], passos = [], shape = trip.legs.length === 1 ? trip.legs[0].shape : null;
   for (const leg of trip.legs) {
@@ -429,35 +451,27 @@ function lerTrip(trip) {
     passos = passos.concat(leg.maneuvers.map(m => ({ txt: m.instruction, km: m.length || 0, tipo: m.type, idx: base + (m.begin_shape_index || 0),
       rua: (m.street_names || [])[0] || "", alerta: m.verbal_transition_alert_instruction || m.instruction, agora: m.verbal_pre_transition_instruction || m.instruction })));
   }
-  return { linha, passos, shape, km: trip.summary.length, min: trip.summary.time / 60 };
+  const minV = trip.summary.time / 60;
+  return { linha, passos, shape, km: trip.summary.length, min: minV, minV };
 }
-async function valhalla(o, d, excluir = [], alternativas = 0) {
-  const body = { locations: [{ lat: o.lat, lon: o.lon }, { lat: d.lat, lon: d.lon }], costing: "auto", units: "km", language: "pt-BR",
-                 exclude_locations: excluir.map(c => ({ lat: c.lat, lon: c.lon })) };
+// vias: pontos de passagem (o Valhalla segue o caminho por eles sem parar)
+async function valhalla(o, d, excluir = [], alternativas = 0, vias = []) {
+  const body = { locations: [{ lat: o.lat, lon: o.lon }, ...vias.map(([lat, lon]) => ({ lat, lon, type: "through" })), { lat: d.lat, lon: d.lon }],
+                 costing: "auto", units: "km", language: "pt-BR", exclude_locations: excluir.map(c => ({ lat: c.lat, lon: c.lon })) };
   if (alternativas) body.alternates = alternativas;
   const r = await fetch(VALHALLA + "/route", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json();
   if (!r.ok || !j.trip) throw new Error(j.error || ("servidor de rotas respondeu " + r.status));
   return [lerTrip(j.trip), ...(j.alternates || []).map(a => lerTrip(a.trip))];
 }
-// procura a rota com menos câmeras dos tipos marcados (exclui as câmeras do caminho e tenta de novo)
-async function menosCameras(o, d, tipos, direta) {
-  let melhor = direta, melhorHits = camerasNaRota(direta.linha, tipos);
-  if (!tipos.size || !melhorHits.length) return melhor;
-  let excluir = camerasNaRota(direta.linha, tipos, CORREDOR_M).sort((a, b) => a.dist - b.dist).slice(0, MAX_EXCLUIR);
-  for (let t = 0; t < TENTATIVAS && excluir.length; t++) {
-    let r;
-    try { [r] = await valhalla(o, d, excluir); }
-    catch { excluir = excluir.slice(0, Math.max(1, excluir.length >> 1)); continue; }
-    const hits = camerasNaRota(r.linha, tipos);
-    if (hits.length < melhorHits.length || (hits.length === melhorHits.length && r.min < melhor.min)) { melhor = r; melhorHits = hits; }
-    if (!hits.length) break;
-    const ids = new Set(excluir.map(c => c.id)), novos = hits.filter(c => !ids.has(c.id));
-    if (!novos.length) break;
-    excluir = novos.concat(excluir).slice(0, MAX_EXCLUIR);
-  }
-  return melhor;
+async function osrm(o, d) {
+  const r = await fetch(`${OSRM}${o.lon},${o.lat};${d.lon},${d.lat}?alternatives=3&overview=full&geometries=geojson`);
+  const j = await r.json();
+  if (!r.ok || j.code !== "Ok") throw new Error("OSRM: " + (j.message || r.status));
+  return j.routes.map(x => ({ linha: x.geometry.coordinates.map(([lon, lat]) => [lat, lon]), min: x.duration / 60, km: x.distance / 1000 }));
 }
+// pontos de passagem espalhados ao longo de uma linha
+function amostrar(linha, n = 6) { const out = []; for (let i = 1; i <= n; i++) out.push(linha[Math.floor(i * (linha.length - 1) / (n + 1))]); return out; }
 // separa as câmeras "na rota" das "perto da rota" e descobre as vias principais do caminho
 function classificarCameras(r, tipos) {
   const todas = camerasNaRota(r.linha, tipos, PERTO_M);
@@ -468,22 +482,66 @@ function classificarCameras(r, tipos) {
   r.via = Object.entries(porRua).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n.replace(/^Avenida /, "Av. ").replace(/^Rua /, "R. "));
   return r;
 }
-const parecida = (a, b) => Math.abs(a.km - b.km) < 0.05 && Math.abs(a.min - b.min) < 0.5;
-// até 3 opções: mais rápida, menos radares e uma alternativa
+const parecida = (a, b) => Math.abs(a.km - b.km) < 0.3 && Math.abs(a.min - b.min) < 1 && a.cams.length === b.cams.length;
+const melhorPorRadar = (a, b) => (b.cams.length < a.cams.length || (b.cams.length === a.cams.length && b.min < a.min)) ? b : a;
+// caminhos-base: os do OSRM refeitos no Valhalla; se o OSRM falhar, usa só o Valhalla
+async function caminhosBase(o, d, tipos) {
+  try {
+    const rs = await osrm(o, d);
+    const base = (await Promise.all(rs.map(async x => {
+      try { const [v] = await valhalla(o, d, [], 0, amostrar(x.linha)); v.min = x.min; return v; } catch { return null; }
+    }))).filter(Boolean);
+    if (base.length) {
+      // fator para converter o tempo do Valhalla (pessimista) na escala do OSRM
+      const fatores = base.map(v => v.min / v.minV).sort((a, b) => a - b);
+      return { base, fator: fatores[fatores.length >> 1] };
+    }
+  } catch {}
+  return { base: await valhalla(o, d, [], 2), fator: 1 };
+}
+// rota com o mínimo de radares; entre as que empatam, a mais rápida.
+// Duas buscas em paralelo: (a) desvio curto, evitando só os radares do caminho; (b) desvio pelo corredor, evitando os radares em volta.
+async function cadeiaDesvio(o, d, tipos, inicio, fator, corredor) {
+  const novas = []; let melhor = inicio;
+  let excluir = corredor ? camerasNaRota(inicio.linha, tipos, CORREDOR_M).sort((a, b) => a.dist - b.dist).slice(0, MAX_EXCLUIR) : [...inicio.cams];
+  for (let t = 0; t < 3 && excluir.length; t++) {
+    let r;
+    try { [r] = await valhalla(o, d, excluir.slice(0, MAX_EXCLUIR)); } catch { excluir = excluir.slice(0, Math.max(1, excluir.length >> 1)); continue; }
+    r.min = r.minV * fator; classificarCameras(r, tipos); novas.push(r);
+    melhor = melhorPorRadar(melhor, r);
+    if (!r.cams.length) break;
+    const ids = new Set(excluir.map(c => c.id)), novos = r.cams.filter(c => !ids.has(c.id));
+    if (!novos.length) break;
+    excluir = novos.concat(excluir);
+  }
+  return novas;
+}
+async function minimoRadares(o, d, tipos, candidatas, fator) {
+  const melhor = candidatas.reduce(melhorPorRadar);
+  if (!tipos.size || !melhor.cams.length) return [];
+  const comMaisRadares = candidatas.reduce((a, b) => b.cams.length > a.cams.length ? b : a);
+  const [a, b] = await Promise.all([cadeiaDesvio(o, d, tipos, melhor, fator, false), cadeiaDesvio(o, d, tipos, comMaisRadares, fator, true)]);
+  const tudo = [...a, ...b];
+  // se ainda sobrou radar, refina a melhor encontrada desviando só dos que restaram
+  const melhorAte = [melhor, ...tudo].reduce(melhorPorRadar);
+  if (melhorAte.cams.length && melhorAte !== melhor) tudo.push(...await cadeiaDesvio(o, d, tipos, melhorAte, fator, false));
+  return tudo;
+}
+// até 3 opções: mínimo de radares, mais rápida e alternativa (a segunda mais rápida)
 async function calcularOpcoes(o, d, tipos) {
-  const lista = await valhalla(o, d, [], 2);
-  const rapida = lista[0];
-  const menos = await menosCameras(o, d, tipos, rapida);
-  const todas = [rapida, menos, ...lista.slice(1)];
-  for (const r of todas) classificarCameras(r, tipos);
+  const { base, fator } = await caminhosBase(o, d, tipos);
+  // as rotas próprias do Valhalla também entram (outros caminhos possíveis), com o tempo na mesma escala
+  if (fator !== 1) try { for (const v of await valhalla(o, d, [], 2)) { v.min = v.minV * fator; base.push(v); } } catch {}
+  for (const r of base) classificarCameras(r, tipos);
+  const todas = [...base, ...await minimoRadares(o, d, tipos, base, fator)];
   const unicas = [];
   for (const r of todas) if (!unicas.some(u => parecida(u, r))) unicas.push(r);
-  const maisRapida = unicas.reduce((a, b) => b.min < a.min ? b : a);
-  const menosRad = unicas.reduce((a, b) => (b.cams.length < a.cams.length || (b.cams.length === a.cams.length && b.min < a.min)) ? b : a);
+  const porTempo = [...unicas].sort((a, b) => a.min - b.min);
+  const menosRad = unicas.reduce(melhorPorRadar), maisRapida = porTempo[0];
   const ops = [];
-  if (menosRad === maisRapida) ops.push(Object.assign(maisRapida, { tag: "Mais rápida · menos radares", pref: "menos" }));
+  if (menosRad === maisRapida || menosRad.cams.length === maisRapida.cams.length) ops.push(Object.assign(maisRapida, { tag: "Mais rápida · menos radares", pref: "menos" }));
   else { ops.push(Object.assign(menosRad, { tag: "Menos radares", pref: "menos" })); ops.push(Object.assign(maisRapida, { tag: "Mais rápida", pref: "rapida" })); }
-  for (const r of unicas) if (ops.length < 3 && !ops.includes(r)) ops.push(Object.assign(r, { tag: "Alternativa", pref: "rapida" }));
+  for (const r of porTempo) if (ops.length < 3 && !ops.includes(r)) ops.push(Object.assign(r, { tag: ops.some(x => x.tag === "Alternativa") ? "Outra opção" : "Alternativa", pref: "rapida" }));
   return ops;
 }
 // limites de velocidade do OpenStreetMap para cada trecho da rota
@@ -544,6 +602,8 @@ function prepararEstilo() { if (!map.isStyleLoaded() || map.getSource("rotas")) 
 for (const ev of ["style.load", "styledata", "idle"]) map.on(ev, prepararEstilo);
 map.on("click", "rotas-outras", e => { const i = e.features?.[0]?.properties?.idx; if (i != null && document.body.dataset.estado === "rotas") selecionar(+i); });
 function mostrarLinhas(linhas, sel) { // linhas: [[lat, lon], ...][]; sel: índice da escolhida
+  linhaSel = linhas[sel] || null;
+  for (const [, m] of camMarcas) m.marca.remove(); camMarcas.clear(); // reposiciona os radares na nova linha
   geoRotas = { type: "FeatureCollection", features: linhas.map((l, i) => ({ type: "Feature", properties: { idx: i, sel: i === sel }, geometry: { type: "LineString", coordinates: l.map(([a, b]) => [b, a]) } })) };
   // a escolhida por último, para ficar por cima
   geoRotas.features.sort((a, b) => a.properties.sel - b.properties.sel);
@@ -575,10 +635,35 @@ function mostrarRadar(c) {
   $("infoRadarIco").innerHTML = radarSvg(na ? "#d1222f" : pe ? "#e08a00" : c.enq.some(e => tipos.has(e)) ? "#d1222f" : "#8f9cab", 30);
   $("infoRadarTxt").innerHTML = `<b>${esc(c.enq.map(e => LEG[e] || e).join(", "))}${c.vel ? ` · ${esc(c.vel)}` : ""}</b><small>${esc(c.local)}</small>`
     + (na ? `<small style="color:var(--cam);font-weight:700">Na rota escolhida</small>` : pe ? `<small class="perto" style="font-weight:700">Perto da rota: provavelmente na pista oposta, num viaduto ou cruzamento</small>` : "")
-    + `<small>Câmera ${esc(c.id)} · CET-SP</small>`;
+    + (c.fonte === "OSM" ? `<small>Fonte: OpenStreetMap (cadastro colaborativo; pode estar desatualizado)</small>` : `<small>Câmera ${esc(c.id)} · CET-SP</small>`);
   $("infoRadar").hidden = false;
 }
 $("fecharRadar").onclick = () => { $("infoRadar").hidden = true; };
+// posição do ícone: no meio da rua. Radar da rota: encaixa na linha da rota. Outros: na rua mais próxima desenhada no mapa (até 30 m).
+let linhaSel = null;
+function noMeioDaRua(c, naRota) {
+  if (naRota && linhaSel) {
+    let best = null;
+    for (let i = 1; i < linhaSel.length; i++) { const p = projSeg([c.lat, c.lon], linhaSel[i - 1], linhaSel[i]); if (!best || p.d < best.d) best = { d: p.d, a: linhaSel[i - 1], b: linhaSel[i], t: p.t }; }
+    if (best && best.d <= PERTO_M) return [best.a[0] + (best.b[0] - best.a[0]) * best.t, best.a[1] + (best.b[1] - best.a[1]) * best.t];
+  }
+  if (c.rua) return c.rua;
+  try {
+    const pt = map.project(ll(c.lat, c.lon));
+    const feats = map.queryRenderedFeatures([[pt.x - 30, pt.y - 30], [pt.x + 30, pt.y + 30]])
+      .filter(f => f.sourceLayer === "transportation" && /LineString/.test(f.geometry.type) && !/path|track|rail|ferry|cable|pier/.test(f.properties.class || ""));
+    let best = null;
+    for (const f of feats) {
+      const linhas = f.geometry.type === "LineString" ? [f.geometry.coordinates] : f.geometry.coordinates;
+      for (const l of linhas) for (let i = 1; i < l.length; i++) {
+        const a = [l[i - 1][1], l[i - 1][0]], b = [l[i][1], l[i][0]], p = projSeg([c.lat, c.lon], a, b);
+        if (!best || p.d < best.d) best = { d: p.d, pos: [a[0] + (b[0] - a[0]) * p.t, a[1] + (b[1] - a[1]) * p.t] };
+      }
+    }
+    if (best && best.d <= 30) { if (map.getZoom() >= 15) c.rua = best.pos; return best.pos; }
+  } catch {}
+  return [c.lat, c.lon];
+}
 // marcadores de radar: só os da área visível; reaproveita os que já existem (sem piscar na navegação)
 const camMarcas = new Map();
 function desenharCameras() {
@@ -595,11 +680,12 @@ function desenharCameras() {
   }
   for (const [id, m] of camMarcas) if (!quer.has(id) || quer.get(id).tipo !== m.tipo) { m.marca.remove(); camMarcas.delete(id); }
   for (const [id, { c, tipo }] of quer) {
-    if (camMarcas.has(id)) continue;
+    if (camMarcas.has(id)) { const m = camMarcas.get(id); if (!m.naRua) { const pos = noMeioDaRua(c, tipo === "rota"); if (pos !== m.pos) { m.marca.setLngLat(ll(...pos)); m.pos = pos; m.naRua = !!c.rua || tipo === "rota"; } } continue; }
     const [cor, w, z] = ICO[tipo], el = elemento("radar", radarSvg(cor, w));
     el.style.zIndex = z;
     el.addEventListener("click", ev => { ev.stopPropagation(); mostrarRadar(c); });
-    camMarcas.set(id, { tipo, marca: new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(ll(c.lat, c.lon)).addTo(map) });
+    const pos = noMeioDaRua(c, tipo === "rota");
+    camMarcas.set(id, { tipo, pos, naRua: !!c.rua || tipo === "rota", marca: new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(ll(...pos)).addTo(map) });
   }
 }
 let tCam; map.on("moveend", () => { clearTimeout(tCam); tCam = setTimeout(desenharCameras, 250); });
@@ -804,7 +890,7 @@ async function abrirRotas() {
     await garantirCameras();
     const ops = await calcularOpcoes(pts.o, pts.d, tiposMarcados());
     if (n !== calcSeq) return;
-    OPCOES = ops; $("msgRotas").innerHTML = "";
+    OPCOES = ops; $("msgRotas").innerHTML = ""; $("notaTempo").hidden = false;
     selecionar(0, true);
   } catch (e) {
     if (n !== calcSeq) return;
@@ -887,6 +973,24 @@ function atualizarVozUI() { $("btnVoz").textContent = vozLigada ? "🔊" : "🔇
 $("btnVoz").onclick = () => { vozLigada = !vozLigada; store.set("voz", vozLigada); atualizarVozUI(); if (!vozLigada) try { speechSynthesis.cancel(); } catch {} };
 for (const b of $("voz").children) b.onclick = () => { vozLigada = b.dataset.v === "1"; store.set("voz", vozLigada); atualizarVozUI(); };
 
+// ================= sinal sonoro (gerado no aparelho) =================
+let somCtx = null;
+function prepararSom() { try { somCtx = somCtx || new (window.AudioContext || window.webkitAudioContext)(); somCtx.resume(); } catch {} }
+// toca uma sequência de tons; usa a mesma chave de voz (🔊/🔇)
+function bip(freqs, dur = .16, pausa = .07, vol = .5) {
+  if (!vozLigada || !somCtx) return;
+  try {
+    let t = somCtx.currentTime + .02;
+    for (const f of freqs) {
+      const o = somCtx.createOscillator(), g = somCtx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g).connect(somCtx.destination); o.start(t); o.stop(t + dur + .03); t += dur + pausa;
+    }
+  } catch {}
+}
+const SOM = { aviso: () => bip([988, 1319], .18, .06), perto: () => bip([1319, 1319], .1, .07), agora: () => bip([1568, 1568, 1568], .08, .05, .6) };
+
 // ================= navegação =================
 let NAV = null, SIM = null, wakeLock = null;
 const SETA = {
@@ -921,11 +1025,11 @@ document.addEventListener("visibilitychange", () => { if (NAV && document.visibi
 
 function iniciarNav(simular) {
   const r = prepararRota(OPCOES[SEL]);
-  NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
+  NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), camEtapa: new Map(), ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
   estado("nav"); $("btnVoltar").hidden = true; $("alerta").hidden = true; $("chipSim").hidden = !simular;
   mostrarLinhas([r.linha], 0);
   destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(); desenharCameras();
-  pedirTelaAcesa(); atualizarVozUI();
+  pedirTelaAcesa(); atualizarVozUI(); prepararSom();
   // a primeira fala precisa sair do toque no botão (exigência do iPhone)
   const p1 = r.passos[0];
   falar(simular ? "Simulação iniciada. " + (p1 ? p1.agora : "") : (p1 ? p1.agora : "Siga a rota."), true);
@@ -1017,7 +1121,13 @@ function passoNavegacao() {
     if (perto.enq.includes("V") && lim) limiteCam = lim;
     $("alerta").hidden = false;
     $("alerta").innerHTML = `<big>📷 ${fmtDist(d)}</big><div>Câmera de ${esc(tipo)}${lim ? ` · limite ${lim}` : ""}<br><small style="color:#fff">${esc(perto.local)}</small></div>`;
-    if (!N.camFalada.has(perto.id)) { N.camFalada.add(perto.id); falar(`Câmera de ${tipo} em ${fmt(Math.round(d / 50) * 50)} metros${lim ? `, limite ${lim}` : ""}.`); }
+    // sinal sonoro em 3 etapas (300 m, 150 m e 50 m) + fala na primeira
+    const etapa = d <= 50 ? 3 : d <= 150 ? 2 : 1, antes = N.camEtapa.get(perto.id) || 0;
+    if (etapa > antes) {
+      N.camEtapa.set(perto.id, etapa);
+      if (antes === 0) { SOM.aviso(); const txt = `Câmera de ${tipo} em ${fmt(Math.round(d / 50) * 50)} metros${lim ? `, limite ${lim}` : ""}.`; setTimeout(() => falar(txt), 550); }
+      else if (etapa === 2) SOM.perto(); else SOM.agora();
+    }
   } else $("alerta").hidden = true;
   // velocidade e limite
   const limite = (r.limites && r.limites[Math.max(0, N.idx - 1)]) || limiteCam;
@@ -1040,8 +1150,8 @@ async function recalcular() {
   falar("Recalculando.", true); $("manDist").textContent = "Recalculando…"; $("manRua").textContent = "";
   try {
     const o = { lat: ultimaPos[0], lon: ultimaPos[1] }, tipos = tiposMarcados();
-    const [rap] = await valhalla(o, pts.d);
-    const nova = N.pref === "menos" ? await menosCameras(o, pts.d, tipos, rap) : rap;
+    const ops = await calcularOpcoes(o, pts.d, tipos);
+    const nova = (N.pref === "menos" ? ops.find(x => x.pref === "menos") : ops.find(x => /Mais rápida/.test(x.tag))) || ops[0];
     if (NAV !== N) return;
     classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
     N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
@@ -1097,7 +1207,7 @@ $("ajustes").addEventListener("click", e => { if (e.target === $("ajustes")) $("
 $("esquecerLocal").onclick = e => { e.preventDefault(); try { localStorage.removeItem("origemGps"); } catch {} $("lembrarLocal").checked = false; $("perguntaLocal").hidden = false; $("ajustes").hidden = true; };
 $("atualizar").onclick = e => { e.preventDefault(); $("ajustes").hidden = true; abrirPopRadar(); };
 let BASE_EM = null;
-function textoBase() { return BASE_EM ? `${fmt(CAMERAS.length)} câmeras ativas · base de ${new Date(BASE_EM).toLocaleDateString("pt-BR")} às ${hora(new Date(BASE_EM))}` : "Base de câmeras ainda não carregada."; }
+function textoBase() { const osm = CAMERAS.filter(c => c.fonte === "OSM").length; return BASE_EM ? `${fmt(CAMERAS.length - osm)} câmeras da CET + ${fmt(osm)} do OpenStreetMap · base de ${new Date(BASE_EM).toLocaleDateString("pt-BR")} às ${hora(new Date(BASE_EM))}` : "Base de câmeras ainda não carregada."; }
 function info(em) { BASE_EM = em; $("info").textContent = textoBase(); if (!$("popRadar").hidden) $("popInfo").textContent = textoBase(); desenharCameras(); }
 
 // pop-up da base de radares: aparece na primeira abertura do dia e pelo botão do mapa
