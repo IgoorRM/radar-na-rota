@@ -310,7 +310,8 @@ const HIT_M = 20, PERTO_M = 35, CORREDOR_M = 600, MAX_EXCLUIR = 50, TENTATIVAS =
 const ALERTA_M = 300, FORA_M = 50, FORA_S = 4, RECALC_MIN_S = 20, CHEGOU_M = 30, TOLERANCIA_KMH = 5, AVISO_VEL_S = 30, VOLTA_S = 10;
 const LEG = { R: "Rodízio", V: "Velocidade", A: "Avanço de semáforo", P: "Parada sobre a faixa", EXD: "Faixa exclusiva (dir.)", EXE: "Faixa exclusiva (esq.)",
   MT: "Motocicletas", CPD: "Conversão proib. dir.", CPE: "Conversão proib. esq.", S: "Trânsito seletivo", F: "ZMRF – Fretado", Z: "ZMRC – Caminhão", VR: "VER – Caminhão", PR: "Faixa proib. caminhão" };
-const PADRAO = ["R", "V", "A"];
+// padrão: todos os tipos que valem para carro (os de caminhão, moto e fretado ficam desmarcados)
+const PADRAO = ["R", "V", "A", "P", "EXD", "EXE", "CPD", "CPE", "S"];
 const COR = { rota: "#1764c4", outra: "#8f9cab", cam: "#d1222f" };
 
 const $ = id => document.getElementById(id);
@@ -373,7 +374,7 @@ async function baixarCameras() {
   }
   return cams;
 }
-// 2ª fonte: radares de velocidade cadastrados por voluntários no OpenStreetMap (Grande São Paulo).
+// 2ª fonte: radares de velocidade cadastrados por voluntários no OpenStreetMap (estado de São Paulo).
 // Entram só os que não estão a menos de 50 m de um equipamento da CET.
 // cópia da lista do OpenStreetMap guardada no próprio app (o servidor público Overpass é instável)
 async function baixarOsm() {
@@ -386,12 +387,12 @@ function juntarFontes(cet, osm) {
   return cet.concat(extra);
 }
 async function carregarCameras(forcar = false) {
-  const c = store.get("cameras2", null);
+  const c = store.get("cameras3", null);
   if (!forcar && c && Date.now() - c.em < CACHE_DIAS * 864e5) { CAMERAS = c.lista; return c.em; }
   try {
     const [cet, osm] = await Promise.all([baixarCameras(), baixarOsm().catch(() => (c ? c.lista.filter(x => x.fonte === "OSM") : []))]);
     const em = Date.now();
-    CAMERAS = juntarFontes(cet, osm); store.set("cameras2", { em, lista: CAMERAS });
+    CAMERAS = juntarFontes(cet, osm); store.set("cameras3", { em, lista: CAMERAS });
     return em;
   }
   catch (e) { if (c) { CAMERAS = c.lista; return c.em; } throw e; }
@@ -455,9 +456,12 @@ function lerTrip(trip) {
   return { linha, passos, shape, km: trip.summary.length, min: minV, minV };
 }
 // vias: pontos de passagem (o Valhalla segue o caminho por eles sem parar)
-async function valhalla(o, d, excluir = [], alternativas = 0, vias = []) {
+// areas: radares a excluir por um triângulo em volta (pega todas as pistas ali); semRodovia: evita vias expressas
+async function valhalla(o, d, excluir = [], alternativas = 0, vias = [], { areas = [], semRodovia = false } = {}) {
   const body = { locations: [{ lat: o.lat, lon: o.lon }, ...vias.map(([lat, lon]) => ({ lat, lon, type: "through" })), { lat: d.lat, lon: d.lon }],
                  costing: "auto", units: "km", language: "pt-BR", exclude_locations: excluir.map(c => ({ lat: c.lat, lon: c.lon })) };
+  if (areas.length) body.exclude_polygons = areas.map(triangulo);
+  if (semRodovia) body.costing_options = { auto: { use_highways: 0 } };
   if (alternativas) body.alternates = alternativas;
   const r = await fetch(VALHALLA + "/route", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json();
@@ -499,16 +503,36 @@ async function caminhosBase(o, d, tipos) {
   } catch {}
   return { base: await valhalla(o, d, [], 2), fator: 1 };
 }
-// rota com o mínimo de radares; entre as que empatam, a mais rápida.
-// Duas buscas em paralelo: (a) desvio curto, evitando só os radares do caminho; (b) desvio pelo corredor, evitando os radares em volta.
-async function cadeiaDesvio(o, d, tipos, inicio, fator, corredor) {
-  const novas = []; let melhor = inicio;
-  let excluir = corredor ? camerasNaRota(inicio.linha, tipos, CORREDOR_M).sort((a, b) => a.dist - b.dist).slice(0, MAX_EXCLUIR) : [...inicio.cams];
+// triângulo de ~25 m em volta do radar (o servidor aceita até 100 vértices = 25 triângulos)
+function triangulo(c, r = 25) {
+  const dl = r / 110540, dn = r / (111320 * Math.cos(c.lat * RAD));
+  return [[c.lon, c.lat + dl], [c.lon + dn, c.lat - dl], [c.lon - dn, c.lat - dl], [c.lon, c.lat + dl]];
+}
+// Busca a rota SEM radares: evita vias expressas e vai excluindo os radares que aparecem no caminho.
+// Os que insistem em aparecer (o ponto "gruda" na pista errada) passam a ser excluídos por área.
+// Se não chegar a zero, as tentativas servem para achar o mínimo possível.
+async function cadeiaZero(o, d, tipos, fator, semRodovia) {
+  const novas = []; let excluir = [], areas = new Set();
+  for (let t = 0; t < 8; t++) {
+    const pontos = excluir.filter(c => !areas.has(c.id)).slice(0, MAX_EXCLUIR), tri = excluir.filter(c => areas.has(c.id)).slice(0, 25);
+    let r;
+    try { [r] = await valhalla(o, d, pontos, 0, [], { areas: tri, semRodovia }); } catch { excluir = excluir.slice(0, Math.max(0, excluir.length - 5)); continue; }
+    r.min = r.minV * fator; classificarCameras(r, tipos); novas.push(r);
+    if (!r.cams.length) break;
+    const antes = new Set(excluir.map(c => c.id));
+    for (const c of r.cams) if (antes.has(c.id)) areas.add(c.id);
+    const ids = new Set(r.cams.map(c => c.id));
+    excluir = [...r.cams, ...excluir.filter(c => !ids.has(c.id))].slice(0, MAX_EXCLUIR + 25);
+  }
+  return novas;
+}
+// desvio curto: evita só os radares do caminho mais rápido (gera rotas rápidas com menos radares)
+async function cadeiaDesvio(o, d, tipos, inicio, fator) {
+  const novas = []; let excluir = [...inicio.cams];
   for (let t = 0; t < 3 && excluir.length; t++) {
     let r;
-    try { [r] = await valhalla(o, d, excluir.slice(0, MAX_EXCLUIR)); } catch { excluir = excluir.slice(0, Math.max(1, excluir.length >> 1)); continue; }
+    try { [r] = await valhalla(o, d, excluir.slice(0, MAX_EXCLUIR)); } catch { break; }
     r.min = r.minV * fator; classificarCameras(r, tipos); novas.push(r);
-    melhor = melhorPorRadar(melhor, r);
     if (!r.cams.length) break;
     const ids = new Set(excluir.map(c => c.id)), novos = r.cams.filter(c => !ids.has(c.id));
     if (!novos.length) break;
@@ -516,32 +540,35 @@ async function cadeiaDesvio(o, d, tipos, inicio, fator, corredor) {
   }
   return novas;
 }
-async function minimoRadares(o, d, tipos, candidatas, fator) {
-  const melhor = candidatas.reduce(melhorPorRadar);
-  if (!tipos.size || !melhor.cams.length) return [];
-  const comMaisRadares = candidatas.reduce((a, b) => b.cams.length > a.cams.length ? b : a);
-  const [a, b] = await Promise.all([cadeiaDesvio(o, d, tipos, melhor, fator, false), cadeiaDesvio(o, d, tipos, comMaisRadares, fator, true)]);
-  const tudo = [...a, ...b];
-  // se ainda sobrou radar, refina a melhor encontrada desviando só dos que restaram
-  const melhorAte = [melhor, ...tudo].reduce(melhorPorRadar);
-  if (melhorAte.cams.length && melhorAte !== melhor) tudo.push(...await cadeiaDesvio(o, d, tipos, melhorAte, fator, false));
-  return tudo;
-}
-// até 3 opções: mínimo de radares, mais rápida e alternativa (a segunda mais rápida)
+// 3 opções:
+//  1) Sem radares (ou o mínimo possível, se não houver caminho sem radar)
+//  2) Rápida com poucos radares: entre as mais rápidas que a opção 1, a de menos radares (empate: a mais rápida)
+//  3) Mais rápida, com quantos radares tiver
 async function calcularOpcoes(o, d, tipos) {
   const { base, fator } = await caminhosBase(o, d, tipos);
-  // as rotas próprias do Valhalla também entram (outros caminhos possíveis), com o tempo na mesma escala
   if (fator !== 1) try { for (const v of await valhalla(o, d, [], 2)) { v.min = v.minV * fator; base.push(v); } } catch {}
   for (const r of base) classificarCameras(r, tipos);
-  const todas = [...base, ...await minimoRadares(o, d, tipos, base, fator)];
+  let todas = [...base];
+  if (tipos.size && base.some(r => r.cams.length)) {
+    const rapida0 = base.reduce((a, b) => b.min < a.min ? b : a);
+    const [z1, z2, dv] = await Promise.all([cadeiaZero(o, d, tipos, fator, true), cadeiaZero(o, d, tipos, fator, false), cadeiaDesvio(o, d, tipos, rapida0, fator)]);
+    todas = todas.concat(z1, z2, dv);
+  }
   const unicas = [];
   for (const r of todas) if (!unicas.some(u => parecida(u, r))) unicas.push(r);
-  const porTempo = [...unicas].sort((a, b) => a.min - b.min);
-  const menosRad = unicas.reduce(melhorPorRadar), maisRapida = porTempo[0];
+  const maisRapida = unicas.reduce((a, b) => b.min < a.min ? b : a);
+  const zero = unicas.reduce(melhorPorRadar);
   const ops = [];
-  if (menosRad === maisRapida || menosRad.cams.length === maisRapida.cams.length) ops.push(Object.assign(maisRapida, { tag: "Mais rápida · menos radares", pref: "menos" }));
-  else { ops.push(Object.assign(menosRad, { tag: "Menos radares", pref: "menos" })); ops.push(Object.assign(maisRapida, { tag: "Mais rápida", pref: "rapida" })); }
-  for (const r of porTempo) if (ops.length < 3 && !ops.includes(r)) ops.push(Object.assign(r, { tag: ops.some(x => x.tag === "Alternativa") ? "Outra opção" : "Alternativa", pref: "rapida" }));
+  if (zero.cams.length === maisRapida.cams.length) {
+    ops.push(Object.assign(maisRapida, { tag: maisRapida.cams.length ? "Mais rápida · menos radares possível" : "Mais rápida · sem radares", pref: "zero" }));
+  } else {
+    ops.push(Object.assign(zero, { tag: zero.cams.length ? "Menos radares possível" : "Sem radares", pref: "zero" }));
+    const meio = unicas.filter(r => r !== zero && r !== maisRapida && r.cams.length < maisRapida.cams.length && r.min < zero.min);
+    if (meio.length) ops.push(Object.assign(meio.reduce(melhorPorRadar), { tag: "Rápida com poucos radares", pref: "equilibrio" }));
+    ops.push(Object.assign(maisRapida, { tag: "Mais rápida", pref: "rapida" }));
+  }
+  // se sobrou espaço, completa com a 2ª mais rápida
+  for (const r of [...unicas].sort((a, b) => a.min - b.min)) if (ops.length < 3 && !ops.includes(r)) ops.push(Object.assign(r, { tag: ops.some(x => x.tag === "Alternativa") ? "Outra opção" : "Alternativa", pref: "rapida" }));
   return ops;
 }
 // limites de velocidade do OpenStreetMap para cada trecho da rota
@@ -701,7 +728,7 @@ function nomeEndereco(p) {
 }
 async function photon(q, limit = 8) {
   const c = map.getCenter();
-  const p = new URLSearchParams({ q, limit, lat: c.lat.toFixed(4), lon: c.lng.toFixed(4), bbox: "-47.2,-24.0,-46.0,-23.1" });
+  const p = new URLSearchParams({ q, limit, lat: c.lat.toFixed(4), lon: c.lng.toFixed(4), bbox: "-53.2,-25.4,-44.1,-19.7" });
   const r = await fetch(PHOTON + "?" + p);
   if (!r.ok) throw new Error("busca respondeu " + r.status);
   return (await r.json()).features.map(f => ({ ...nomeEndereco(f.properties), lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }));
@@ -883,7 +910,7 @@ async function abrirRotas() {
   marcarOrigem(); marcarDestino(true);
   limparRotas(); destaque = new Set(); OPCOES = [];
   $("cards").innerHTML = ""; $("detalhe").hidden = true; $("btnIr").disabled = true;
-  $("msgRotas").innerHTML = `<div class="carregando">Calculando rotas e conferindo radares…</div>`;
+  $("msgRotas").innerHTML = `<div class="carregando">Calculando rotas e procurando um caminho sem radares… (pode levar uns 15 s)</div>`;
   enquadrar([[[pts.o.lat, pts.o.lon], [pts.d.lat, pts.d.lon]]], 320);
   const n = ++calcSeq;
   try {
@@ -1151,7 +1178,7 @@ async function recalcular() {
   try {
     const o = { lat: ultimaPos[0], lon: ultimaPos[1] }, tipos = tiposMarcados();
     const ops = await calcularOpcoes(o, pts.d, tipos);
-    const nova = (N.pref === "menos" ? ops.find(x => x.pref === "menos") : ops.find(x => /Mais rápida/.test(x.tag))) || ops[0];
+    const nova = ops.find(x => x.pref === N.pref) || ops.find(x => /Mais rápida/.test(x.tag)) || ops[0];
     if (NAV !== N) return;
     classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
     N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
@@ -1251,9 +1278,9 @@ function aplicar3d() { document.body.classList.toggle("em3d", vis3d); for (const
 for (const b of $("vis3d").children) b.onclick = () => { vis3d = b.dataset.v === "1"; store.set("vis3d", vis3d); aplicar3d(); };
 aplicar3d();
 
-const marcados = new Set(store.get("tipos", PADRAO));
+const marcados = new Set(store.get("tipos2", PADRAO));
 $("tipos").innerHTML = Object.keys(LEG).map(k => `<label><input type="checkbox" value="${k}" ${marcados.has(k) ? "checked" : ""}> ${LEG[k]}</label>`).join("");
-$("tipos").addEventListener("change", () => { store.set("tipos", [...tiposMarcados()]); desenharCameras(); });
+$("tipos").addEventListener("change", () => { store.set("tipos2", [...tiposMarcados()]); desenharCameras(); });
 
 // tema: escuro do pôr ao nascer do sol em São Paulo (equação do nascer do sol)
 function solHoje(data, lat = -23.55, lon = -46.63) {
