@@ -21,6 +21,8 @@ body.noite { --bg:#0f1419; --panel:#1b232c; --fg:#e9eef3; --muted:#9aa8b6; --lin
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 html.curto { --sb: 0px; }
+/* iPhone, app instalado: diz ter a tela inteira mas não desenha os últimos ~47 pt; sobe tudo que fica embaixo */
+html.corte { --sb: 0px; --cb: max(34px, env(safe-area-inset-top, 47px)); }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
 #mapa { position: fixed; top: 0; left: 0; right: 0; bottom: calc(0px); z-index: 0; background: var(--bg); }
@@ -38,7 +40,7 @@ body[data-estado="busca"] #infoRadar { top: calc(12px + env(safe-area-inset-top,
 #infoRadar button { padding: 6px 10px; font-size: 18px; }
 .radar { background: none; border: 0; }
 /* janela (pop-up) */
-.modal { position: fixed; inset: 0; z-index: 1300; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: 16px; }
+.modal { position: fixed; inset: 0; z-index: 1300; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + var(--cb, 0px)); overflow-y: auto; }
 .caixa { background: var(--panel); border-radius: 22px; box-shadow: var(--sombra); padding: 18px; display: grid; gap: 12px; max-width: 420px; width: 100%; }
 .caixa p { margin: 0; font-size: 15px; }
 #btnRadares { right: 12px; top: calc(132px + env(safe-area-inset-top, 0px)); }
@@ -61,8 +63,8 @@ a { color: var(--acc); }
 small, .dica { color: var(--muted); font-size: 13px; }
 
 /* ---------- folhas (painéis flutuantes) ---------- */
-.folha { position: fixed; left: 8px; right: 8px; bottom: calc(8px + var(--sb)); z-index: 1000; background: var(--panel); border-radius: 22px; box-shadow: var(--sombra);
-  display: flex; flex-direction: column; max-height: 72dvh; }
+.folha { position: fixed; left: 8px; right: 8px; bottom: calc(8px + var(--sb) + var(--cb, 0px)); z-index: 1000; background: var(--panel); border-radius: 22px; box-shadow: var(--sombra);
+  display: flex; flex-direction: column; max-height: calc(72dvh - var(--cb, 0px)); }
 .rolar { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .rolar > * { flex: none; }
 
@@ -72,7 +74,13 @@ small, .dica { color: var(--muted); font-size: 13px; }
 #busca .campo button { background: none; padding: 8px; font-size: 18px; }
 .bol { width: 12px; height: 12px; border-radius: 50%; flex: none; }
 #sugs { display: grid; gap: 2px; }
-#sugs:empty { display: none; }
+#sugs:empty, #recentes:empty { display: none; }
+#recentes { display: grid; gap: 0; }
+#recentes .titulo, #sugs .titulo { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; padding: 2px 6px; }
+.recente { text-align: left; background: none; font-weight: 400; padding: 10px 6px; border-bottom: 1px solid var(--line); border-radius: 0; display: flex; gap: 12px; align-items: center; }
+.recente .ico { font-size: 18px; width: 22px; text-align: center; flex: none; opacity: .8; }
+.recente .txt { min-width: 0; display: grid; } .recente .txt b, .recente .txt small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.digitando #recentes { display: none; }
 #sugs button { text-align: left; background: none; font-weight: 400; padding: 10px 6px; border-radius: 10px; display: grid; gap: 2px; border-bottom: 1px solid var(--line); border-radius: 0; }
 #sugs button b { font-size: 16px; }
 .selo { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 6px; background: #fff1c2; color: #5a4300; margin-left: 6px; vertical-align: 1px; }
@@ -121,7 +129,7 @@ ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14
 #manProg { position: absolute; left: 0; bottom: 0; height: 5px; background: #5cb6ff; width: 0; transition: width .8s linear; }
 #alerta { position: fixed; top: calc(78px + env(safe-area-inset-top, 0px)); left: 10px; right: 10px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
 #alerta big { font-size: 24px; }
-#navBase { position: fixed; left: 0; right: 0; bottom: calc(0px); z-index: 1000; background: #15191f; color: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -4px 14px rgba(0,0,0,.35); padding: 8px 14px calc(6px + max(0px, var(--sb) - 20px)); display: grid; gap: 2px; }
+#navBase { position: fixed; left: 0; right: 0; bottom: calc(0px + var(--cb, 0px)); z-index: 1000; background: #15191f; color: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -4px 14px rgba(0,0,0,.35); padding: 8px 14px calc(6px + max(0px, var(--sb) - 20px)); display: grid; gap: 2px; }
 body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
 #navLinha { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .redondo { width: 46px; height: 46px; border-radius: 50%; padding: 0; display: grid; place-items: center; background: rgba(127,140,155,.22); color: inherit; flex: none; }
@@ -131,14 +139,14 @@ body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
 #navCentro small { font-size: 14px; color: inherit; opacity: .9; }
 #navRad.tem { color: #ff6b75; font-weight: 700; } #navRad.zero { color: #3fbf7f; font-weight: 700; }
 .rotulo { font-size: 10px; text-align: center; opacity: .7; margin-top: 1px; }
-#ruaAtual { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(0px, var(--sb) - 20px) + 92px); z-index: 950; background: #0b0e12; color: #fff; font-weight: 700; font-size: 17px; border-radius: 999px; padding: 10px 20px; max-width: 50vw; text-align: center; box-shadow: var(--sombra); line-height: 1.2; }
+#ruaAtual { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(0px, var(--sb) - 20px) + 92px + var(--cb, 0px)); z-index: 950; background: #0b0e12; color: #fff; font-weight: 700; font-size: 17px; border-radius: 999px; padding: 10px 20px; max-width: 50vw; text-align: center; box-shadow: var(--sombra); line-height: 1.2; }
 #ruaAtual:empty { display: none; }
-#velo { position: fixed; left: 12px; bottom: calc(max(0px, var(--sb) - 20px) + 88px); z-index: 950; display: flex; align-items: flex-start; }
+#velo { position: fixed; left: 12px; bottom: calc(max(0px, var(--sb) - 20px) + 88px + var(--cb, 0px)); z-index: 950; display: flex; align-items: flex-start; }
 #veloAtual { width: 72px; height: 72px; border-radius: 50%; background: #0b0e12; color: #fff; box-shadow: var(--sombra); display: grid; place-items: center; text-align: center; line-height: 1; border: 3px solid rgba(255,255,255,.15); }
 #veloAtual b { font-size: 30px; } #veloAtual small { font-size: 11px; display: block; color: #cfd6de; }
 #veloAtual.acima { background: var(--cam); } #veloAtual.acima small { color: #fff; }
 #placa { width: 44px; height: 44px; margin-left: -14px; margin-top: -10px; border-radius: 50%; background: #fff; border: 5px solid #d1222f; color: #111; display: grid; place-items: center; font-weight: 800; font-size: 16px; box-shadow: var(--sombra); }
-#btnVoltar { position: fixed; right: 12px; bottom: calc(max(0px, var(--sb) - 20px) + 150px); z-index: 950; background: #0b0e12; color: #fff; box-shadow: var(--sombra); border-radius: 999px; padding: 12px 16px; }
+#btnVoltar { position: fixed; right: 12px; bottom: calc(max(0px, var(--sb) - 20px) + 150px + var(--cb, 0px)); z-index: 950; background: #0b0e12; color: #fff; box-shadow: var(--sombra); border-radius: 999px; padding: 12px 16px; }
 #chipSim { position: fixed; left: 12px; top: calc(82px + env(safe-area-inset-top, 0px)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
 #btnVoz { position: fixed; right: 12px; top: calc(82px + env(safe-area-inset-top, 0px)); width: 48px; height: 48px; font-size: 22px; background: #0b0e12; color: #fff; }
 #alerta:not([hidden]) ~ #btnVoz, #alerta:not([hidden]) ~ #chipSim { top: calc(150px + env(safe-area-inset-top, 0px)); }
@@ -147,7 +155,7 @@ body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
 #btnAjustes { right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); }
 #btnCentro { right: 12px; top: calc(72px + env(safe-area-inset-top, 0px)); }
 #ajustes { position: fixed; top: 0; left: 0; right: 0; bottom: calc(0px); z-index: 1200; background: rgba(0,0,0,.35); display: flex; align-items: flex-end; }
-#ajustes .folha { position: static; width: 100%; margin: 8px; margin-bottom: calc(8px + var(--sb)); max-height: 88dvh; }
+#ajustes .folha { position: static; width: 100%; margin: 8px; margin-bottom: calc(8px + var(--sb) + var(--cb, 0px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - var(--cb, 0px)); }
 .cab { display: flex; justify-content: space-between; align-items: center; } .cab b { font-size: 19px; }
 .tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; }
 .tipos label { display: flex; gap: 8px; align-items: center; } .tipos input { width: 20px; height: 20px; flex: none; }
@@ -208,6 +216,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
       <button id="limparD" aria-label="Apagar destino" hidden>✕</button></div>
     <div id="sugs"></div>
     <div id="msgBusca"></div>
+    <div id="recentes"></div>
     <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas OSRM e Valhalla/FOSSGIS · câmeras CET-SP</div>
   </div>
 </section>
@@ -262,6 +271,12 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
     <div class="seg" id="voz"><button data-v="1">Ligada</button><button data-v="0">Desligada</button></div>
     <div><b>Mapa inclinado (3D) na navegação</b></div>
     <div class="seg" id="vis3d"><button data-v="1">Ligado</button><button data-v="0">Desligado</button></div>
+    <div><b>Histórico de destinos</b><div class="dica">Guarda só no aparelho os últimos 20 destinos (saída, destino e data). O trajeto não é gravado.</div></div>
+    <div class="seg" id="histLig"><button data-v="1">Ligado</button><button data-v="0">Desligado</button></div>
+    <div class="links"><a href="#" id="apagarHist">Apagar histórico</a></div>
+    <div><b>Ajuste da borda de baixo</b><div class="dica">Use "Subir" se a barra de baixo aparecer cortada no app instalado.</div></div>
+    <div class="seg" id="corteSel"><button data-v="auto">Automático</button><button data-v="sim">Subir</button><button data-v="nao">Normal</button></div>
+    <div class="dica" id="diagTela"></div>
     <div class="dica" id="info">Carregando base da CET…</div>
     <div class="links"><a href="#" id="atualizar">Atualizar base de câmeras</a><a href="#" id="esquecerLocal">Perguntar de novo sobre a localização</a></div>
     <div class="dica">Respeite a sinalização em todo o trajeto, com ou sem câmera. Monte a rota antes de sair.</div>
@@ -281,7 +296,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
       <ul>
         <li>O app não tem cadastro, login, servidor próprio, anúncios, cookies de rastreamento nem coleta de estatísticas.</li>
         <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (OSRM, OpenStreetMap/FOSSGIS e Photon/komoot) quando você pede uma rota, um endereço, ou quando a rota é recalculada durante a navegação.</li>
-        <li>O app guarda no próprio aparelho (armazenamento local do navegador) apenas suas preferências e uma cópia da lista pública de câmeras. O trajeto não é gravado. Para apagar, limpe os dados do site no navegador.</li>
+        <li>O app guarda no próprio aparelho (armazenamento local do navegador) apenas suas preferências, uma cópia da lista pública de câmeras e, se o histórico estiver ligado, os últimos 20 destinos (saída, destino e data). O trajeto não é gravado. O histórico pode ser apagado ou desligado nos Ajustes. Para apagar, limpe os dados do site no navegador.</li>
         <li>As falas da navegação são geradas pelo próprio aparelho.</li>
         <li>Os serviços de terceiros recebem seu endereço IP e seguem as próprias políticas de privacidade.</li>
       </ul>
@@ -330,6 +345,12 @@ function medirFalta() {
   const falta = instalado ? Math.max(0, Math.min(120, alturaTela - window.innerHeight)) : 0;
   // o iPhone não desenha nessa faixa, mas ela já fica no lugar da barrinha de gestos: aí não precisa de margem embaixo
   document.documentElement.classList.toggle("curto", falta > 20);
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const telaToda = Math.abs(window.innerHeight - (window.innerWidth < window.innerHeight ? screen.height : screen.width)) < 3;
+  const manual = store.get("corte", "auto"); // ajuste manual nos Ajustes, caso a detecção erre
+  document.documentElement.classList.toggle("corte", manual === "sim" || (manual === "auto" && instalado && ios && telaToda));
+  const dg = document.getElementById("diagTela");
+  if (dg) dg.textContent = `Tela: ${screen.width}×${screen.height} · área ${window.innerWidth}×${window.innerHeight} · instalado: ${instalado ? "sim" : "não"} · ajuste de borda: ${document.documentElement.classList.contains("corte") ? "ligado" : "desligado"}`;
   try { map.resize(); } catch { /* o mapa ainda não foi criado */ }
 }
 medirFalta(); addEventListener("resize", medirFalta); addEventListener("orientationchange", () => setTimeout(medirFalta, 300));
@@ -765,9 +786,52 @@ async function buscar(q) {
 }
 let campoAtivo = "d";
 const seq = { n: 0 };
+// ================= histórico de destinos (só no aparelho) =================
+const HIST_MAX = 20;
+let histLigado = store.get("histLigado", true);
+function lerHist() { return store.get("historico", []); }
+function salvarDestino() {
+  if (!histLigado || !pts.d) return;
+  const d = pts.d, de = origemGps ? "Minha localização" : (pts.o?.nome || "");
+  const lista = lerHist().filter(h => distM([h.lat, h.lon], [d.lat, d.lon]) > 60); // o mesmo lugar sobe para o topo
+  lista.unshift({ nome: d.nome, detalhe: d.detalhe || "", lat: d.lat, lon: d.lon, de, em: Date.now() });
+  store.set("historico", lista.slice(0, HIST_MAX));
+  mostrarRecentes();
+}
+function quando(ms) {
+  const d = new Date(ms), hoje = new Date(), ontem = new Date(Date.now() - 864e5);
+  if (d.toDateString() === hoje.toDateString()) return "hoje, " + hora(d);
+  if (d.toDateString() === ontem.toDateString()) return "ontem, " + hora(d);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+function itemRecente(h) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "recente";
+  b.innerHTML = `<span class="ico">🕘</span><span class="txt"><b></b><small></small></span>`;
+  b.querySelector("b").textContent = h.nome;
+  b.querySelector("small").textContent = [h.detalhe, quando(h.em)].filter(Boolean).join(" · ");
+  b.onclick = () => escolher("d", { lat: h.lat, lon: h.lon, titulo: h.nome, detalhe: h.detalhe });
+  return b;
+}
+function mostrarRecentes() {
+  const box = $("recentes"); box.innerHTML = "";
+  const lista = histLigado ? lerHist() : [];
+  if (!lista.length) return;
+  box.insertAdjacentHTML("beforeend", `<div class="titulo">Recentes</div>`);
+  for (const h of lista.slice(0, 3)) box.appendChild(itemRecente(h));
+}
+function atualizarHistUI() { for (const b of $("histLig").children) b.setAttribute("aria-pressed", String(b.dataset.v === (histLigado ? "1" : "0"))); }
+for (const b of $("histLig").children) b.onclick = () => { histLigado = b.dataset.v === "1"; store.set("histLigado", histLigado); atualizarHistUI(); mostrarRecentes(); };
+$("apagarHist").onclick = e => { e.preventDefault(); if (!confirm("Apagar todo o histórico de destinos?")) return; store.set("historico", []); mostrarRecentes(); $("apagarHist").textContent = "Histórico apagado"; setTimeout(() => { $("apagarHist").textContent = "Apagar histórico"; }, 2000); };
+
 async function sugerir() {
-  const k = campoAtivo, q = $(k).value.trim(), box = $("sugs"), n = ++seq.n;
-  if (q.length < 3) { box.innerHTML = ""; extrasBusca(k); return; }
+  const k = campoAtivo, q = editado[k] ? $(k).value.trim() : "", box = $("sugs"), n = ++seq.n;
+  if (q.length < 3) {
+    box.innerHTML = "";
+    // campo de destino vazio: mostra o histórico completo
+    const lista = k === "d" && histLigado ? lerHist() : [];
+    if (lista.length) { box.insertAdjacentHTML("beforeend", `<div class="titulo">Recentes</div>`); for (const h of lista) box.appendChild(itemRecente(h)); }
+    extrasBusca(k); return;
+  }
   box.innerHTML = `<div class="carregando">Buscando…</div>`;
   try {
     const lista = await buscar(q);
@@ -805,10 +869,10 @@ function atualizarBotoesBusca() {
   $("usarLocal").hidden = origemGps || !navigator.geolocation || !$("perguntaLocal").hidden;
   $("limparD").hidden = !$("d").value;
 }
-let tBusca;
+let tBusca; const editado = { o: false, d: false };
 for (const k of ["o", "d"]) {
-  $(k).addEventListener("focus", () => { campoAtivo = k; document.body.classList.add("digitando"); $("cabBuscaTxt").textContent = k === "o" ? "Saída" : (NAV ? "Novo destino" : "Destino"); $(k).select?.(); sugerir(); });
-  $(k).addEventListener("input", () => { pts[k] = null; if (k === "o") { origemGps = false; marcarOrigem(); } atualizarBotoesBusca(); clearTimeout(tBusca); tBusca = setTimeout(sugerir, 300); });
+  $(k).addEventListener("focus", () => { campoAtivo = k; editado[k] = !pts[k] && $(k).value.trim().length >= 3 && k === "o"; document.body.classList.add("digitando"); $("cabBuscaTxt").textContent = k === "o" ? "Saída" : (NAV ? "Novo destino" : "Destino"); $(k).select?.(); sugerir(); });
+  $(k).addEventListener("input", () => { editado[k] = true; pts[k] = null; if (k === "o") { origemGps = false; marcarOrigem(); } atualizarBotoesBusca(); clearTimeout(tBusca); tBusca = setTimeout(sugerir, 300); });
   $(k).addEventListener("keydown", e => {
     if (e.key !== "Enter") return;
     e.preventDefault(); clearTimeout(tBusca);
@@ -1053,6 +1117,7 @@ async function pedirTelaAcesa() { try { if ("wakeLock" in navigator) wakeLock = 
 document.addEventListener("visibilitychange", () => { if (NAV && document.visibilityState === "visible") pedirTelaAcesa(); });
 
 function iniciarNav(simular) {
+  if (!simular) salvarDestino(); // a simulação não entra no histórico
   const r = prepararRota(OPCOES[SEL]);
   NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), camEtapa: new Map(), ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
   estado("nav"); $("btnVoltar").hidden = true; $("alerta").hidden = true; $("chipSim").hidden = !simular;
@@ -1309,6 +1374,10 @@ atualizarVozUI();
 
 carregarCameras().then(info).catch(e => { $("info").textContent = "Não consegui baixar a base da CET: " + e.message; }).finally(popRadarDoDia);
 atualizarBotoesBusca();
+atualizarHistUI(); mostrarRecentes();
+function atualizarCorteUI() { const v = store.get("corte", "auto"); for (const b of $("corteSel").children) b.setAttribute("aria-pressed", String(b.dataset.v === v)); }
+for (const b of $("corteSel").children) b.onclick = () => { store.set("corte", b.dataset.v); atualizarCorteUI(); medirFalta(); };
+atualizarCorteUI(); medirFalta();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 // para testes automatizados
 window.__app = { pts, get OPCOES() { return OPCOES; }, get NAV() { return NAV; }, map };
