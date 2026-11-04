@@ -123,7 +123,7 @@ ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14
   display: flex; gap: 12px; align-items: center; padding: calc(8px + var(--st)) 16px 10px; overflow: hidden; min-height: calc(68px + var(--st)); }
 #manIco { width: 46px; height: 46px; flex: none; display: grid; place-items: center; font-size: 32px; }
 #manIco svg { width: 46px; height: 46px; }
-#manDist { font-size: 24px; font-weight: 800; line-height: 1.1; }
+#manDist { font-size: 24px; font-weight: 800; line-height: 1.1; color: #fff; }
 #manRua { font-size: 18px; font-weight: 700; color: #5cb6ff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #manobra .txt { min-width: 0; }
 #manProg { position: absolute; left: 0; bottom: 0; height: 5px; background: #5cb6ff; width: 0; transition: width .8s linear; }
@@ -1246,14 +1246,19 @@ function passoNavegacao() {
   // chegada e distância
   $("navKm").textContent = fmtDist(resta);
   // tempo que falta: o previsto, corrigido pelo ritmo real dos últimos minutos (trânsito, semáforos, velocidade do carro)
-  N.amostras.push({ t: agora, a: N.along }); while (N.amostras.length > 2 && agora - N.amostras[0].t > 240000) N.amostras.shift();
+  // só começa depois que o carro já andou ~300 m pela rota (parado antes de sair não é trânsito) e só quando está na rota
+  if (N.inicioAndando == null && N.along >= 300) N.inicioAndando = agora;
   let fator = N.fatorTempo || 1;
-  const a0 = N.amostras[0], dt = (agora - a0.t) / 1000, da = N.along - a0.a;
-  if (dt >= 45) {
-    const previsto = (r.min * 60 / r.total) * Math.max(da, 1);       // segundos previstos para o trecho andado
-    const razao = Math.min(3, Math.max(0.6, dt / previsto));          // >1: mais devagar que o previsto
-    const peso = Math.min(1, dt / 240) * 0.75;                        // quanto mais tempo observado, mais confia
-    fator = fator + (1 + peso * (razao - 1) - fator) * 0.2;           // suaviza para o número não pular
+  if (N.inicioAndando != null && !N.foraDesde) {
+    N.amostras.push({ t: agora, a: N.along }); while (N.amostras.length > 2 && agora - N.amostras[0].t > 240000) N.amostras.shift();
+    const a0 = N.amostras[0], dt = (agora - a0.t) / 1000, da = N.along - a0.a;
+    if (dt >= 60) {
+      const previsto = (r.min * 60 / r.total) * Math.max(da, 1);     // segundos previstos para o trecho andado
+      const razao = Math.min(2, Math.max(0.6, dt / previsto));        // >1: mais devagar que o previsto (no máximo o dobro)
+      const peso = Math.min(1, dt / 240) * 0.6;                       // quanto mais tempo observado, mais confia
+      const alvo = 1 + peso * (razao - 1);
+      fator = fator + (alvo - fator) * 0.05;                          // muda devagar, sem pular a cada segundo
+    }
   }
   N.fatorTempo = fator;
   const restaMin = r.min * (resta / r.total) * fator;
