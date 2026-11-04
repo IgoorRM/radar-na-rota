@@ -1,5 +1,5 @@
 // Guarda a "casca" do app para abrir rápido; rotas, endereços e câmeras sempre vêm da rede.
-const CACHE = "radar-na-rota-v4";
+const CACHE = "radar-na-rota-v5";
 const ARQUIVOS = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js",

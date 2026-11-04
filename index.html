@@ -23,7 +23,35 @@ body.noite { --bg:#0f1419; --panel:#1b232c; --fg:#e9eef3; --muted:#9aa8b6; --lin
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
-#mapa { position: fixed; inset: 0; z-index: 0; background: var(--bg); }
+/* palco do mapa: na navegação o mapa inclina em perspectiva (visão 3D) */
+#palco { position: fixed; inset: 0; z-index: 0; overflow: hidden; perspective: 700px; perspective-origin: 50% 0%; background: var(--bg); }
+#mapa { position: absolute; inset: 0; background: var(--bg); }
+body.em3d[data-estado="nav"] #mapa { left: -70%; right: -70%; top: -50%; bottom: 0; transform-origin: 50% 100%; transform: rotateX(45deg); }
+body.em3d[data-estado="nav"] .leaflet-control-attribution { display: none; }
+#creditoNav { font-size: 10px; color: var(--muted); text-align: center; }
+/* alça para puxar o painel para baixo/cima */
+.alca { flex: none; height: 26px; display: grid; place-items: center; touch-action: none; cursor: grab; }
+.alca::before { content: ""; width: 44px; height: 5px; border-radius: 3px; background: var(--line); }
+#folhaRotas.compacto .extra { display: none !important; }
+/* cartão de informação do radar */
+#infoRadar { position: fixed; left: 8px; right: 8px; top: calc(118px + env(safe-area-inset-top, 0px)); z-index: 1100; background: var(--panel); border-radius: 18px; box-shadow: var(--sombra); padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+body[data-estado="busca"] #infoRadar { top: calc(12px + env(safe-area-inset-top, 0px)); right: 72px; }
+#infoRadar .txt { flex: 1; min-width: 0; font-size: 14px; display: grid; gap: 2px; }
+#infoRadar button { padding: 6px 10px; font-size: 18px; }
+.radar { background: none; border: 0; }
+/* janela (pop-up) */
+.modal { position: fixed; inset: 0; z-index: 1300; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: 16px; }
+.caixa { background: var(--panel); border-radius: 22px; box-shadow: var(--sombra); padding: 18px; display: grid; gap: 12px; max-width: 420px; width: 100%; }
+.caixa p { margin: 0; font-size: 15px; }
+#btnRadares { right: 12px; top: calc(132px + env(safe-area-inset-top, 0px)); }
+#usarLocal { background: var(--acc); color: #fff; border-radius: 999px; padding: 10px 16px; align-self: flex-start; }
+#busca .campo #aqui { background: var(--acc); color: #fff; border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 17px; }
+#cabBusca { display: none; justify-content: space-between; align-items: center; }
+body.digitando #cabBusca, body.trocando #cabBusca { display: flex; }
+#cabBusca button { background: none; color: var(--acc); padding: 6px 4px; }
+.via { font-size: 12px; color: var(--muted); max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#detalhe .cab { margin-bottom: 2px; } #detalhe .cab button { padding: 4px 10px; font-size: 14px; }
+.perto { color: #a86a00; } body.noite .perto { color: #ffc95c; }
 body.noite .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.7); }
 .leaflet-control-attribution { font-size: 10px; }
 body.noite .leaflet-control-attribution { background: rgba(27,35,44,.8) !important; color: #9aa8b6; }
@@ -39,7 +67,8 @@ small, .dica { color: var(--muted); font-size: 13px; }
 /* ---------- folhas (painéis flutuantes) ---------- */
 .folha { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 1000; background: var(--panel); border-radius: 22px; box-shadow: var(--sombra);
   display: flex; flex-direction: column; max-height: 72dvh; }
-.rolar { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; padding: 14px; display: grid; gap: 12px; }
+.rolar { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.rolar > * { flex: none; }
 
 /* ---------- estado: busca ---------- */
 #busca .campo { display: flex; align-items: center; gap: 10px; background: var(--soft); border-radius: 14px; padding: 4px 6px 4px 12px; }
@@ -130,15 +159,25 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
 </style>
 </head>
 <body data-estado="busca">
-<div id="mapa"></div>
+<div id="palco"><div id="mapa"></div></div>
 
 <!-- botões do mapa -->
 <button id="btnAjustes" class="flut so-busca" aria-label="Ajustes">⚙️</button>
-<button id="btnCentro" class="flut so-busca so-rotas-x" aria-label="Centralizar em mim">◎</button>
+<button id="btnCentro" class="flut so-busca" aria-label="Centralizar em mim" style="color:var(--acc)"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8z" fill="currentColor"/></svg></button>
+<button id="btnRadares" class="flut so-busca" aria-label="Atualizar base de radares"></button>
+<div id="infoRadar" hidden><div id="infoRadarIco"></div><div class="txt" id="infoRadarTxt"></div><button id="fecharRadar" aria-label="Fechar">✕</button></div>
+<div id="popRadar" class="modal" hidden><section class="caixa">
+  <b style="font-size:19px">Base de radares</b>
+  <p id="popInfo">Carregando…</p>
+  <p class="dica">A lista vem do painel público da CET-SP. Atualize de vez em quando para incluir câmeras novas e tirar as desativadas.</p>
+  <div class="acoes"><button class="prim" id="popAtualizar">Atualizar agora</button><button id="popFechar">Fechar</button></div>
+</section></div>
 
 <!-- ===== estado: busca ===== -->
 <section id="busca" class="folha so-busca">
+  <div class="alca" id="alcaBusca"></div>
   <div class="rolar">
+    <div id="cabBusca"><b id="cabBuscaTxt">Buscar</b><button id="cancelBusca">Cancelar</button></div>
     <div id="aviso" class="aviso" hidden>
       <b>Antes de usar</b>
       <p>Este app mostra onde há fiscalização eletrônica para você conhecer o caminho. Ele não serve para fugir de radar. Respeite os limites de velocidade, o semáforo e o rodízio em qualquer rua, com ou sem câmera: agentes de trânsito, radares móveis e câmeras novas não aparecem aqui.</p>
@@ -154,9 +193,10 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
     <div class="campo"><span class="bol" style="background:var(--ok)"></span>
       <input id="o" type="text" placeholder="Saída" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false">
       <button id="aqui" aria-label="Usar minha localização">📍</button></div>
+    <button id="usarLocal" hidden>📍 Sair da minha localização</button>
     <div class="campo"><span class="bol" style="background:var(--cam)"></span>
       <input id="d" type="text" placeholder="Para onde?" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false">
-      <button id="fecharBusca" aria-label="Fechar teclado" hidden>✕</button></div>
+      <button id="limparD" aria-label="Apagar destino" hidden>✕</button></div>
     <div id="sugs"></div>
     <div id="msgBusca"></div>
   </div>
@@ -169,13 +209,14 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
   <div class="txt"><small id="rotasDe">Saindo de minha localização</small><b id="rotasPara">Destino</b><small id="rotasAprox" hidden>Número aproximado: arraste o alfinete vermelho até o local exato.</small></div>
 </header>
 <section id="folhaRotas" class="folha so-rotas">
+  <div class="alca" id="alcaRotas"></div>
   <div class="rolar">
     <div id="cards"></div>
-    <div id="detalhe" hidden></div>
+    <div id="detalhe" class="extra" hidden></div>
     <div id="msgRotas"></div>
     <button class="prim" id="btnIr" disabled>Ir</button>
-    <div class="links"><a href="#" id="btnSimular">▶ Simular viagem</a><a href="#" id="btnGmaps">Abrir no Google Maps</a></div>
-    <details id="passos"><summary>Passo a passo</summary><ol id="listaPassos"></ol></details>
+    <div class="links extra"><a href="#" id="btnSimular">▶ Simular viagem</a><a href="#" id="btnGmaps">Abrir no Google Maps</a></div>
+    <details id="passos" class="extra"><summary>Passo a passo</summary><ol id="listaPassos"></ol></details>
   </div>
 </section>
 
@@ -189,6 +230,7 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
 <section id="navBase" class="so-nav">
   <div id="navNums"><div><b id="navChegada">--:--</b><small>chegada</small></div><div><b id="navKm">–</b><small>restante</small></div><div id="navRad"><b id="navRadN">0</b><small>radares à frente</small></div></div>
   <div class="acoes"><button id="btnSair">Sair</button><button id="btnTrocar" class="prim">Trocar destino</button></div>
+  <div id="creditoNav">© OpenStreetMap · rotas Valhalla/FOSSGIS · câmeras CET-SP</div>
 </section>
 
 <!-- ===== ajustes ===== -->
@@ -202,6 +244,8 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
     <div class="dica">Automático: escuro do pôr ao nascer do sol.</div>
     <div><b>Voz na navegação</b></div>
     <div class="seg" id="voz"><button data-v="1">Ligada</button><button data-v="0">Desligada</button></div>
+    <div><b>Mapa inclinado (3D) na navegação</b></div>
+    <div class="seg" id="vis3d"><button data-v="1">Ligado</button><button data-v="0">Desligado</button></div>
     <div class="dica" id="info">Carregando base da CET…</div>
     <div class="links"><a href="#" id="atualizar">Atualizar base de câmeras</a><a href="#" id="esquecerLocal">Perguntar de novo sobre a localização</a></div>
     <div class="dica">Respeite a sinalização em todo o trajeto, com ou sem câmera. Monte a rota antes de sair.</div>
@@ -245,7 +289,8 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
 const PBI = { key: "d8b9566c-25e1-4f66-a54b-ae3b02bda6e7", host: "https://wabi-brazil-south-b-primary-api.analysis.windows.net", modelo: 6865047 };
 const VALHALLA = "https://valhalla1.openstreetmap.de";
 const PHOTON = "https://photon.komoot.io/api/";
-const HIT_M = 30, CORREDOR_M = 600, MAX_EXCLUIR = 50, TENTATIVAS = 4, CACHE_DIAS = 7;
+// câmera "na rota": até 20 m da linha. Entre 20 e 35 m costuma ser a pista oposta, um viaduto ou um cruzamento: aparece como "perto da rota"
+const HIT_M = 20, PERTO_M = 35, CORREDOR_M = 600, MAX_EXCLUIR = 50, TENTATIVAS = 4, CACHE_DIAS = 7;
 const ALERTA_M = 300, FORA_M = 50, FORA_S = 4, RECALC_MIN_S = 20, CHEGOU_M = 30, TOLERANCIA_KMH = 5, AVISO_VEL_S = 30, VOLTA_S = 10;
 const LEG = { R: "Rodízio", V: "Velocidade", A: "Avanço de semáforo", P: "Parada sobre a faixa", EXD: "Faixa exclusiva (dir.)", EXE: "Faixa exclusiva (esq.)",
   MT: "Motocicletas", CPD: "Conversão proib. dir.", CPE: "Conversão proib. esq.", S: "Trânsito seletivo", F: "ZMRF – Fretado", Z: "ZMRC – Caminhão", VR: "VER – Caminhão", PR: "Faixa proib. caminhão" };
@@ -259,7 +304,11 @@ const store = { get(k, def) { try { const v = localStorage.getItem(k); return v 
                 set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const fmtDist = m => m < 1000 ? `${fmt(Math.max(10, Math.round(m / 10) * 10))} m` : `${fmt(m / 1000, 1)} km`;
 const hora = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-function estado(s) { document.body.dataset.estado = s; }
+function estado(s) {
+  document.body.dataset.estado = s;
+  $("infoRadar").hidden = true;
+  if (typeof map !== "undefined") map.invalidateSize({ pan: false }); // o tamanho do mapa muda na visão 3D
+}
 
 // ================= base de câmeras da CET =================
 let CAMERAS = [];
@@ -386,6 +435,16 @@ async function menosCameras(o, d, tipos, direta) {
   }
   return melhor;
 }
+// separa as câmeras "na rota" das "perto da rota" e descobre as vias principais do caminho
+function classificarCameras(r, tipos) {
+  const todas = camerasNaRota(r.linha, tipos, PERTO_M);
+  r.cams = todas.filter(c => c.dist <= HIT_M);
+  r.perto = todas.filter(c => c.dist > HIT_M);
+  const porRua = {};
+  for (const p of r.passos) if (p.rua) porRua[p.rua] = (porRua[p.rua] || 0) + p.km;
+  r.via = Object.entries(porRua).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([n]) => n.replace(/^Avenida /, "Av. ").replace(/^Rua /, "R. "));
+  return r;
+}
 const parecida = (a, b) => Math.abs(a.km - b.km) < 0.05 && Math.abs(a.min - b.min) < 0.5;
 // até 3 opções: mais rápida, menos radares e uma alternativa
 async function calcularOpcoes(o, d, tipos) {
@@ -393,7 +452,7 @@ async function calcularOpcoes(o, d, tipos) {
   const rapida = lista[0];
   const menos = await menosCameras(o, d, tipos, rapida);
   const todas = [rapida, menos, ...lista.slice(1)];
-  for (const r of todas) r.cams = camerasNaRota(r.linha, tipos);
+  for (const r of todas) classificarCameras(r, tipos);
   const unicas = [];
   for (const r of todas) if (!unicas.some(u => parecida(u, r))) unicas.push(r);
   const maisRapida = unicas.reduce((a, b) => b.min < a.min ? b : a);
@@ -443,17 +502,32 @@ function marcarOrigem() {
 }
 function tiposMarcados() { return new Set([...document.querySelectorAll("#tipos input:checked")].map(i => i.value)); }
 
+// ícone de radar: balão com uma câmera de fiscalização
+const radarSvg = (cor, w) => `<svg width="${w}" height="${Math.round(w * 34 / 30)}" viewBox="0 0 30 34"><path d="M6 2h18a4 4 0 0 1 4 4v15a4 4 0 0 1-4 4h-5l-4 6-4-6H6a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="${cor}" stroke="#fff" stroke-width="2"/><rect x="6.5" y="8.5" width="12" height="9.5" rx="2" fill="#fff"/><path d="M18.5 11.5l5-2.6v8.7l-5-2.6z" fill="#fff"/><circle cx="12.5" cy="13.2" r="2.6" fill="${cor}"/></svg>`;
+const ICO = {};
+for (const [k, cor, w] of [["rota", "#d1222f", 34], ["perto", "#e08a00", 28], ["marcado", "#d1222f", 24], ["outro", "#8f9cab", 18]])
+  ICO[k] = L.divIcon({ className: "radar", html: radarSvg(cor, w), iconSize: [w, Math.round(w * 34 / 30)], iconAnchor: [w / 2, Math.round(w * 34 / 30)] });
+let pertoIds = new Set();
+function mostrarRadar(c) {
+  const tipos = tiposMarcados(), na = destaque.has(c.id), pe = pertoIds.has(c.id);
+  $("infoRadarIco").innerHTML = radarSvg(na ? "#d1222f" : pe ? "#e08a00" : c.enq.some(e => tipos.has(e)) ? "#d1222f" : "#8f9cab", 30);
+  $("infoRadarTxt").innerHTML = `<b>${esc(c.enq.map(e => LEG[e] || e).join(", "))}${c.vel ? ` · ${esc(c.vel)}` : ""}</b><small>${esc(c.local)}</small>`
+    + (na ? `<small style="color:var(--cam);font-weight:700">Na rota escolhida</small>` : pe ? `<small class="perto" style="font-weight:700">Perto da rota: provavelmente na pista oposta, num viaduto ou cruzamento</small>` : "")
+    + `<small>Câmera ${esc(c.id)} · CET-SP</small>`;
+  $("infoRadar").hidden = false;
+}
+$("fecharRadar").onclick = () => { $("infoRadar").hidden = true; };
 function desenharCameras() {
   camLayer.clearLayers();
-  if (map.getZoom() < 14) return;
-  const b = map.getBounds().pad(0.3), tipos = tiposMarcados();
+  const longe = map.getZoom() < 14; // de longe, só os radares da rota escolhida
+  const b = map.getBounds().pad(0.3), tipos = tiposMarcados(), nav = document.body.dataset.estado === "nav";
   for (const c of CAMERAS) {
+    const ev = c.enq.some(e => tipos.has(e)), na = destaque.has(c.id), pe = pertoIds.has(c.id);
+    if (longe && !na) continue;
     if (!b.contains([c.lat, c.lon])) continue;
-    const ev = c.enq.some(e => tipos.has(e)), na = destaque.has(c.id);
-    if (document.body.dataset.estado === "nav" && !ev) continue;
-    L.circleMarker([c.lat, c.lon], { radius: na ? 10 : ev ? 7 : 4, weight: na ? 3 : 1, color: na ? "#000" : "#fff",
-      fillColor: ev || na ? COR.cam : COR.outra, fillOpacity: ev || na ? .9 : .6 })
-      .bindPopup(`<b>Câmera ${esc(c.id)}</b><br>${esc(c.local)}<br>${esc(c.enq.map(e => LEG[e] || e).join(", "))}${c.vel ? `<br>Velocidade: ${esc(c.vel)}` : ""}`).addTo(camLayer);
+    if (nav && !ev) continue;
+    L.marker([c.lat, c.lon], { icon: na ? ICO.rota : pe ? ICO.perto : ev ? ICO.marcado : ICO.outro, zIndexOffset: na ? 400 : pe ? 300 : ev ? 200 : 0 })
+      .on("click", ev2 => { L.DomEvent.stop(ev2); mostrarRadar(c); }).addTo(camLayer);
   }
 }
 let tCam; map.on("moveend", () => { clearTimeout(tCam); tCam = setTimeout(desenharCameras, 250); });
@@ -534,22 +608,32 @@ function escolher(k, it) {
   pts[k] = { lat: it.lat, lon: it.lon, nome: it.titulo, detalhe: it.detalhe, aprox: !!it.aprox };
   $(k).value = it.titulo + (it.detalhe ? `, ${it.detalhe}` : "");
   $("sugs").innerHTML = "";
-  if (k === "o") { origemGps = false; marcarOrigem(); $("d").focus(); return; }
+  if (k === "o") { origemGps = false; marcarOrigem(); atualizarBotoesBusca(); $("d").focus(); return; }
   fecharTeclado();
   abrirRotas();
 }
-function fecharTeclado() { document.activeElement?.blur?.(); document.body.classList.remove("digitando"); $("fecharBusca").hidden = true; $("sugs").innerHTML = ""; }
+function fecharTeclado() { document.activeElement?.blur?.(); document.body.classList.remove("digitando"); $("sugs").innerHTML = ""; atualizarBotoesBusca(); }
+// botão de localização em destaque quando a saída não é o GPS; ✕ só quando há texto no destino
+function atualizarBotoesBusca() {
+  $("usarLocal").hidden = origemGps || !navigator.geolocation || !$("perguntaLocal").hidden;
+  $("limparD").hidden = !$("d").value;
+}
+let tBusca;
 for (const k of ["o", "d"]) {
-  let t;
-  $(k).addEventListener("focus", () => { campoAtivo = k; document.body.classList.add("digitando"); $("fecharBusca").hidden = false; $(k).select?.(); sugerir(); });
-  $(k).addEventListener("input", () => { pts[k] = null; if (k === "o") { origemGps = false; marcarOrigem(); } clearTimeout(t); t = setTimeout(sugerir, 300); });
+  $(k).addEventListener("focus", () => { campoAtivo = k; document.body.classList.add("digitando"); $("cabBuscaTxt").textContent = k === "o" ? "Saída" : (NAV ? "Novo destino" : "Destino"); $(k).select?.(); sugerir(); });
+  $(k).addEventListener("input", () => { pts[k] = null; if (k === "o") { origemGps = false; marcarOrigem(); } atualizarBotoesBusca(); clearTimeout(tBusca); tBusca = setTimeout(sugerir, 300); });
   $(k).addEventListener("keydown", e => {
     if (e.key !== "Enter") return;
-    e.preventDefault(); clearTimeout(t);
+    e.preventDefault(); clearTimeout(tBusca);
     buscar($(k).value.trim()).then(l => { if (l[0]) escolher(k, l[0]); else sugerir(); }).catch(() => {});
   });
 }
-$("fecharBusca").onclick = fecharTeclado;
+// ✕ apaga o destino e continua digitando
+$("limparD").addEventListener("pointerdown", e => e.preventDefault()); // não tira o foco do campo
+$("limparD").onclick = () => { $("d").value = ""; pts.d = null; atualizarBotoesBusca(); campoAtivo = "d"; $("d").focus(); sugerir(); };
+$("usarLocal").onclick = () => { fecharTeclado(); usarMinhaLocalizacao(); };
+// Cancelar: fecha a busca; se veio de "Trocar destino", volta para a navegação
+$("cancelBusca").onclick = () => { if (document.body.classList.contains("trocando")) cancelarTroca(); else fecharTeclado(); };
 
 // marcar um ponto tocando no mapa
 let escolhendo = null;
@@ -610,7 +694,7 @@ function usarMinhaLocalizacao() {
   if (!navigator.geolocation) { $("msgBusca").innerHTML = `<div class="erro">Este navegador não fornece localização.</div>`; return; }
   $("o").value = "Localizando…";
   navigator.geolocation.getCurrentPosition(async p => {
-    origemGps = true; marcarOrigem();
+    origemGps = true; marcarOrigem(); $("msgBusca").innerHTML = ""; atualizarBotoesBusca();
     novaPosicao({ lat: p.coords.latitude, lon: p.coords.longitude, speed: p.coords.speed, heading: p.coords.heading });
     $("o").value = "Minha localização";
     if (!pts.d) map.setView(ultimaPos, 16);
@@ -629,6 +713,8 @@ $("btnCentro").onclick = () => { if (ultimaPos) map.setView(ultimaPos, 16); else
 let calcSeq = 0;
 async function abrirRotas() {
   if (!pts.d) return;
+  if (NAV) { encerrarNav(); document.body.classList.remove("trocando"); } // novo destino escolhido durante a viagem
+  $("folhaRotas").classList.remove("compacto");
   if (!pts.o) {
     if (origemGps && ultimaPos) pts.o = { lat: ultimaPos[0], lon: ultimaPos[1], nome: "Minha localização" };
     else { estado("busca"); $("msgBusca").innerHTML = `<div class="erro">Escolha a saída: toque em 📍 para usar sua localização ou digite um endereço.</div>`; $("o").focus(); return; }
@@ -661,8 +747,7 @@ function desenharRotas() {
   const r = OPCOES[SEL];
   L.polyline(r.linha, { color: "#fff", weight: 11, opacity: .95 }).addTo(rotaLayer);
   const linha = L.polyline(r.linha, { color: COR.rota, weight: 7, opacity: 1 }).addTo(rotaLayer);
-  destaque = new Set(r.cams.map(c => c.id));
-  for (const c of r.cams) L.circleMarker([c.lat, c.lon], { radius: 10, color: "#000", weight: 3, fillColor: COR.cam, fillOpacity: 1 }).bindPopup(esc(c.local)).addTo(rotaLayer);
+  destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(r.perto.map(c => c.id));
   desenharCameras();
   return linha;
 }
@@ -682,23 +767,33 @@ function selecionar(i, enquadrar) {
     const b = document.createElement("button"); b.type = "button"; b.className = "card" + (j === SEL ? " sel" : "");
     const n = r.cams.length;
     b.innerHTML = `<span class="tag">${esc(r.tag)}</span><span class="min">${fmt(r.min)} min</span><small>${fmt(r.km, 1)} km</small>
-      <span class="chip ${n ? "tem" : "zero"}">${n ? `📷 ${n} radar${n > 1 ? "es" : ""}` : "✓ 0 radares"}</span>`;
-    b.onclick = () => { if (j === SEL) mostrarDetalhe(); else { selecionar(j); $("detalhe").hidden = true; } };
+      ${r.via.length ? `<span class="via">via ${esc(r.via.join(" e "))}</span>` : ""}
+      <span class="chip ${n ? "tem" : "zero"}">${n ? `📷 ${n} radar${n > 1 ? "es" : ""}` : "✓ 0 radares"} ›</span>`;
+    b.onclick = e => {
+      const chip = e.target.closest(".chip");
+      if (j !== SEL) { selecionar(j); if (chip) abrirDetalhe(); }
+      else if (chip || $("detalhe").hidden) abrirDetalhe(); else fecharDetalhe();
+    };
     $("cards").appendChild(b);
   });
+  fecharDetalhe();
   $("cards").children[SEL]?.scrollIntoView({ block: "nearest", inline: "nearest" });
   const r = OPCOES[SEL];
   $("listaPassos").innerHTML = r.passos.map(p => `<li>${esc(p.txt)} ${p.km ? `<small>${fmtDist(p.km * 1000)}</small>` : ""}</li>`).join("");
   $("btnIr").disabled = false;
   $("btnIr").textContent = `Ir · ${fmt(r.min)} min`;
 }
-function mostrarDetalhe() {
+function fecharDetalhe() { $("detalhe").hidden = true; }
+function abrirDetalhe() {
   const r = OPCOES[SEL], el = $("detalhe");
-  if (!el.hidden) { el.hidden = true; return; }
-  el.hidden = false;
-  el.innerHTML = r.cams.length
-    ? `<b>${r.cams.length} radar(es) nesta rota: ${esc(porTipo(r.cams))}</b>` + r.cams.map(c => `<div class="cam"><b>${esc(c.enq.map(e => LEG[e] || e).join(", "))}</b>${c.vel ? ` · ${esc(c.vel)}` : ""}<br><small>${esc(c.local)}</small></div>`).join("")
-    : `<b>Nenhum radar dos tipos marcados nesta rota.</b><small>Respeite a sinalização mesmo assim: radares móveis e agentes não aparecem aqui.</small>`;
+  $("folhaRotas").classList.remove("compacto");
+  const item = c => `<div class="cam"><b>${esc(c.enq.map(e => LEG[e] || e).join(", "))}</b>${c.vel ? ` · ${esc(c.vel)}` : ""}<br><small>${esc(c.local)}</small></div>`;
+  let h = `<div class="cab"><b>${esc(r.tag)}${r.via.length ? ` · via ${esc(r.via.join(" e "))}` : ""}</b><button id="fecharDet">Fechar ✕</button></div>`;
+  h += r.cams.length ? `<b>${r.cams.length} radar(es) na rota: ${esc(porTipo(r.cams))}</b>` + r.cams.map(item).join("")
+    : `<b>Nenhum radar dos tipos marcados na rota.</b><small>Respeite a sinalização mesmo assim: radares móveis e agentes não aparecem aqui.</small>`;
+  if (r.perto.length) h += `<b class="perto" style="margin-top:6px">${r.perto.length} perto da rota, mas fora dela</b><small>Provavelmente na pista oposta, num viaduto ou cruzamento. Não entram na contagem; balão laranja no mapa.</small>` + r.perto.map(item).join("");
+  el.innerHTML = h; el.hidden = false;
+  $("fecharDet").onclick = e => { e.stopPropagation(); fecharDetalhe(); };
 }
 $("voltarBusca").onclick = () => { calcSeq++; rotaLayer.clearLayers(); destaque = new Set(); if (marcaD) { map.removeLayer(marcaD); marcaD = null; } estado("busca"); desenharCameras(); };
 $("btnIr").onclick = () => iniciarNav(false);
@@ -750,7 +845,7 @@ function iniciarNav(simular) {
   rotaLayer.clearLayers();
   NAV.linhaFundo = L.polyline(r.linha, { color: "#fff", weight: 12, opacity: .95 }).addTo(rotaLayer);
   NAV.linha = L.polyline(r.linha, { color: COR.rota, weight: 8 }).addTo(rotaLayer);
-  destaque = new Set(r.cams.map(c => c.id)); desenharCameras();
+  destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(); desenharCameras();
   pedirTelaAcesa(); atualizarVozUI();
   // a primeira fala precisa sair do toque no botão (exigência do iPhone)
   const p1 = r.passos[0];
@@ -766,11 +861,19 @@ function encerrarNav() {
   setBearing(0); atualizarCarro();
 }
 $("btnSair").onclick = () => { encerrarNav(); estado("rotas"); selecionar(SEL, true); };
+// Trocar destino: abre a busca sem parar a navegação; "Cancelar" volta para a viagem
+let destinoAntes = null;
 $("btnTrocar").onclick = () => {
-  encerrarNav(); rotaLayer.clearLayers(); destaque = new Set(); if (marcaD) { map.removeLayer(marcaD); marcaD = null; }
-  if (ultimaPos && navigator.geolocation) { origemGps = true; pts.o = { lat: ultimaPos[0], lon: ultimaPos[1], nome: "Minha localização" }; $("o").value = "Minha localização"; marcarOrigem(); }
-  pts.d = null; $("d").value = ""; estado("busca"); desenharCameras(); $("d").focus();
+  destinoAntes = { pt: pts.d, txt: $("d").value };
+  document.body.classList.add("trocando");
+  if (ultimaPos && navigator.geolocation) { origemGps = true; pts.o = { lat: ultimaPos[0], lon: ultimaPos[1], nome: "Minha localização" }; $("o").value = "Minha localização"; }
+  pts.d = null; $("d").value = ""; setBearing(0); estado("busca"); atualizarBotoesBusca(); $("d").focus();
 };
+function cancelarTroca() {
+  document.body.classList.remove("trocando"); fecharTeclado();
+  if (destinoAntes) { pts.d = destinoAntes.pt; $("d").value = destinoAntes.txt; }
+  estado("nav"); if (NAV) { NAV.seguir = true; $("btnVoltar").hidden = true; } seguirCarro(true); desenharCameras();
+}
 
 // usuário arrastou o mapa: para de seguir; volta sozinho depois de 10 s
 map.on("dragstart", () => {
@@ -782,12 +885,21 @@ map.on("dragend zoomend", () => { if (NAV && !NAV.seguir) { clearTimeout(NAV.tVo
 function voltarAMim() { if (!NAV) return; NAV.seguir = true; $("btnVoltar").hidden = true; seguirCarro(true); }
 $("btnVoltar").onclick = voltarAMim;
 function seguirCarro(forcar) {
-  if (!NAV || !ultimaPos || (!NAV.seguir && !forcar)) return;
-  const z = velGps && velGps > 60 ? 16 : 17;
+  if (!NAV || !ultimaPos || (!NAV.seguir && !forcar) || document.body.dataset.estado !== "nav") return;
+  const em3d = document.body.classList.contains("em3d");
+  const z = em3d ? (velGps && velGps > 60 ? 17 : 18) : (velGps && velGps > 60 ? 16 : 17);
   const h = rumoAtual ?? 0;
   // deixa o carro na parte de baixo da tela, mostrando mais do caminho à frente
   const mPorPx = 156543.03 * Math.cos(ultimaPos[0] * RAD) / Math.pow(2, z);
-  const centro = deslocar(ultimaPos, window.innerHeight * 0.18 * mPorPx, h);
+  const H = window.innerHeight;
+  let ajustePx = H * 0.18;
+  if (em3d) {
+    // mapa inclinado 45° com perspectiva 700px (fuga no topo): onde o carro precisa ficar no mapa para aparecer a 66% da altura da tela
+    const p = 700, c = Math.SQRT1_2, alvo = 0.66 * H;
+    const s = p * (H - alvo) / (c * (p + alvo)); // distância, em px do mapa, da borda de baixo até o carro
+    ajustePx = $("mapa").offsetHeight / 2 - s;
+  }
+  const centro = deslocar(ultimaPos, ajustePx * mPorPx, h);
   setBearing(-h);
   map.setView(centro, z, { animate: !forcar, duration: .8 });
   atualizarCarro();
@@ -858,7 +970,7 @@ async function recalcular() {
     const [rap] = await valhalla(o, pts.d);
     const nova = N.pref === "menos" ? await menosCameras(o, pts.d, tipos, rap) : rap;
     if (NAV !== N) return;
-    nova.cams = camerasNaRota(nova.linha, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
+    classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
     N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
     N.linhaFundo.setLatLngs(nova.linha); N.linha.setLatLngs(nova.linha);
     destaque = new Set(nova.cams.map(c => c.id)); desenharCameras();
@@ -892,11 +1004,11 @@ function pararSimulacao() { if (SIM) clearTimeout(SIM.t); SIM = null; }
 
 // ================= aviso, localização inicial, ajustes =================
 if (!store.get("avisoVisto", false)) $("aviso").hidden = false;
-$("okAviso").onclick = () => { store.set("avisoVisto", true); $("aviso").hidden = true; };
+$("okAviso").onclick = () => { store.set("avisoVisto", true); $("aviso").hidden = true; popRadarDoDia(); };
 $("abrirTermos").onclick = e => { e.preventDefault(); $("ajustes").hidden = false; $("termos").open = true; setTimeout(() => $("termos").scrollIntoView({ behavior: "smooth" }), 50); };
 function responderLocal(usar) {
   if ($("lembrarLocal").checked) store.set("origemGps", usar);
-  $("perguntaLocal").hidden = true;
+  $("perguntaLocal").hidden = true; atualizarBotoesBusca();
   if (usar) usarMinhaLocalizacao(); else $("o").focus();
 }
 $("simLocal").onclick = () => responderLocal(true);
@@ -910,8 +1022,51 @@ $("btnAjustes").onclick = () => { $("ajustes").hidden = false; };
 $("fecharAjustes").onclick = () => { $("ajustes").hidden = true; };
 $("ajustes").addEventListener("click", e => { if (e.target === $("ajustes")) $("ajustes").hidden = true; });
 $("esquecerLocal").onclick = e => { e.preventDefault(); try { localStorage.removeItem("origemGps"); } catch {} $("lembrarLocal").checked = false; $("perguntaLocal").hidden = false; $("ajustes").hidden = true; };
-$("atualizar").onclick = async e => { e.preventDefault(); $("info").textContent = "Atualizando base da CET…"; try { info(await carregarCameras(true)); } catch (er) { $("info").textContent = "Falhou: " + er.message; } };
-function info(em) { $("info").textContent = `${fmt(CAMERAS.length)} câmeras ativas · base de ${new Date(em).toLocaleDateString("pt-BR")}`; desenharCameras(); }
+$("atualizar").onclick = e => { e.preventDefault(); $("ajustes").hidden = true; abrirPopRadar(); };
+let BASE_EM = null;
+function textoBase() { return BASE_EM ? `${fmt(CAMERAS.length)} câmeras ativas · base de ${new Date(BASE_EM).toLocaleDateString("pt-BR")} às ${hora(new Date(BASE_EM))}` : "Base de câmeras ainda não carregada."; }
+function info(em) { BASE_EM = em; $("info").textContent = textoBase(); if (!$("popRadar").hidden) $("popInfo").textContent = textoBase(); desenharCameras(); }
+
+// pop-up da base de radares: aparece na primeira abertura do dia e pelo botão do mapa
+function abrirPopRadar() { $("popInfo").textContent = textoBase(); $("popAtualizar").disabled = false; $("popAtualizar").textContent = "Atualizar agora"; $("popRadar").hidden = false; }
+function popRadarDoDia() {
+  const hoje = new Date().toDateString();
+  if (store.get("popRadarDia", "") === hoje || !$("aviso").hidden) return;
+  store.set("popRadarDia", hoje); abrirPopRadar();
+}
+$("btnRadares").innerHTML = radarSvg("#d1222f", 26);
+$("btnRadares").onclick = abrirPopRadar;
+$("popFechar").onclick = () => { $("popRadar").hidden = true; };
+$("popRadar").addEventListener("click", e => { if (e.target === $("popRadar")) $("popRadar").hidden = true; });
+$("popAtualizar").onclick = async () => {
+  $("popAtualizar").disabled = true; $("popAtualizar").textContent = "Atualizando…"; $("popInfo").textContent = "Baixando a lista da CET…";
+  try { info(await carregarCameras(true)); $("popInfo").textContent = "✓ Atualizada: " + textoBase(); setTimeout(() => { $("popRadar").hidden = true; }, 1500); }
+  catch (er) { $("popInfo").textContent = "Não consegui atualizar (" + er.message + "). A base anterior continua valendo."; }
+  finally { $("popAtualizar").disabled = false; $("popAtualizar").textContent = "Atualizar agora"; }
+};
+
+// puxar os painéis com o dedo: para baixo recolhe, para cima expande, toque alterna
+function arrastavel(alca, folha, aoDescer, aoSubir, aoTocar) {
+  let y0 = null, dy = 0;
+  alca.addEventListener("pointerdown", e => { y0 = e.clientY; dy = 0; folha.style.transition = "none"; alca.setPointerCapture?.(e.pointerId); });
+  alca.addEventListener("pointermove", e => { if (y0 === null) return; dy = e.clientY - y0; folha.style.transform = `translateY(${Math.max(-30, dy)}px)`; });
+  const fim = () => {
+    if (y0 === null) return; y0 = null;
+    folha.style.transition = "transform .2s"; folha.style.transform = "";
+    if (dy > 50) aoDescer(); else if (dy < -30) aoSubir(); else if (Math.abs(dy) < 6) aoTocar();
+  };
+  alca.addEventListener("pointerup", fim); alca.addEventListener("pointercancel", fim);
+}
+const fr = $("folhaRotas");
+const ajustarMapaRotas = () => { if (OPCOES.length) setTimeout(() => selecionar(SEL, true), 220); };
+arrastavel($("alcaRotas"), fr, () => { fr.classList.add("compacto"); ajustarMapaRotas(); }, () => { fr.classList.remove("compacto"); }, () => { fr.classList.toggle("compacto"); ajustarMapaRotas(); });
+arrastavel($("alcaBusca"), $("busca"), () => { if (document.body.classList.contains("trocando")) cancelarTroca(); else fecharTeclado(); }, () => { campoAtivo = "d"; $("d").focus(); }, () => {});
+
+// visão 3D na navegação
+let vis3d = store.get("vis3d", true);
+function aplicar3d() { document.body.classList.toggle("em3d", vis3d); for (const b of $("vis3d").children) b.setAttribute("aria-pressed", String(b.dataset.v === (vis3d ? "1" : "0"))); map.invalidateSize({ pan: false }); }
+for (const b of $("vis3d").children) b.onclick = () => { vis3d = b.dataset.v === "1"; store.set("vis3d", vis3d); aplicar3d(); };
+aplicar3d();
 
 const marcados = new Set(store.get("tipos", PADRAO));
 $("tipos").innerHTML = Object.keys(LEG).map(k => `<label><input type="checkbox" value="${k}" ${marcados.has(k) ? "checked" : ""}> ${LEG[k]}</label>`).join("");
@@ -940,7 +1095,8 @@ for (const b of $("tema").children) b.onclick = () => { tema = b.dataset.v; stor
 aplicarTema(); setInterval(aplicarTema, 60000);
 atualizarVozUI();
 
-carregarCameras().then(info).catch(e => { $("info").textContent = "Não consegui baixar a base da CET: " + e.message; });
+carregarCameras().then(info).catch(e => { $("info").textContent = "Não consegui baixar a base da CET: " + e.message; }).finally(popRadarDoDia);
+atualizarBotoesBusca();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 // para testes automatizados
 window.__app = { pts, get OPCOES() { return OPCOES; }, get NAV() { return NAV; }, map };
