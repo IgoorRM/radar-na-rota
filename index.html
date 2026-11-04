@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
 <style>
-:root { --sb: env(safe-area-inset-bottom, 0px); --bg:#eef2f6; --panel:#fff; --fg:#17202a; --muted:#5e6b78; --line:#dbe2ea; --soft:#f2f5f8;
+:root { --sb: env(safe-area-inset-bottom, 0px); --st: env(safe-area-inset-top, 0px); --bg:#eef2f6; --panel:#fff; --fg:#17202a; --muted:#5e6b78; --line:#dbe2ea; --soft:#f2f5f8;
   --acc:#1764c4; --acc2:#0f4f9e; --cam:#d1222f; --ok:#1f8a4c; --okbg:#e3f5ea; --warnbg:#fde6e8; --sombra:0 6px 24px rgba(20,35,60,.18); }
 body.noite { --bg:#0f1419; --panel:#1b232c; --fg:#e9eef3; --muted:#9aa8b6; --line:#2d3946; --soft:#232d38;
   --acc:#4b9bff; --acc2:#7ab4ff; --cam:#ff5a66; --ok:#5fd197; --okbg:#173326; --warnbg:#3a1d22; --sombra:0 6px 24px rgba(0,0,0,.5); color-scheme: dark; }
@@ -22,7 +22,7 @@ body.noite { --bg:#0f1419; --panel:#1b232c; --fg:#e9eef3; --muted:#9aa8b6; --lin
 [hidden] { display: none !important; }
 html.curto { --sb: 0px; }
 /* iPhone, app instalado: diz ter a tela inteira mas não desenha os últimos ~47 pt; sobe tudo que fica embaixo */
-html.corte { --sb: 0px; --cb: max(34px, env(safe-area-inset-top, 47px)); }
+html.corte { --sb: 0px; --st: max(47px, env(safe-area-inset-top, 0px)); --cb: 47px; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
 #mapa { position: fixed; top: 0; left: 0; right: 0; bottom: calc(0px); z-index: 0; background: var(--bg); }
@@ -34,16 +34,16 @@ body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; 
 #folhaRotas .rolar { gap: 10px; padding-top: 4px; }
 #folhaRotas .credito { font-size: 9px; }
 /* cartão de informação do radar */
-#infoRadar { position: fixed; left: 8px; right: 8px; top: calc(118px + env(safe-area-inset-top, 0px)); z-index: 1100; background: var(--panel); border-radius: 18px; box-shadow: var(--sombra); padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
-body[data-estado="busca"] #infoRadar { top: calc(12px + env(safe-area-inset-top, 0px)); right: 72px; }
+#infoRadar { position: fixed; left: 8px; right: 8px; top: calc(118px + var(--st)); z-index: 1100; background: var(--panel); border-radius: 18px; box-shadow: var(--sombra); padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+body[data-estado="busca"] #infoRadar { top: calc(12px + var(--st)); right: 72px; }
 #infoRadar .txt { flex: 1; min-width: 0; font-size: 14px; display: grid; gap: 2px; }
 #infoRadar button { padding: 6px 10px; font-size: 18px; }
 .radar { background: none; border: 0; }
 /* janela (pop-up) */
-.modal { position: fixed; inset: 0; z-index: 1300; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + var(--cb, 0px)); overflow-y: auto; }
+.modal { position: fixed; inset: 0; z-index: 1300; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: calc(16px + var(--st)) 16px calc(16px + var(--cb, 0px)); overflow-y: auto; }
 .caixa { background: var(--panel); border-radius: 22px; box-shadow: var(--sombra); padding: 18px; display: grid; gap: 12px; max-width: 420px; width: 100%; }
 .caixa p { margin: 0; font-size: 15px; }
-#btnRadares { right: 12px; top: calc(132px + env(safe-area-inset-top, 0px)); }
+#btnRadares { right: 12px; top: calc(132px + var(--st)); }
 #usarLocal { background: var(--acc); color: #fff; border-radius: 999px; padding: 10px 16px; align-self: flex-start; }
 #busca .campo #aqui { background: var(--acc); color: #fff; border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 17px; }
 #cabBusca { display: none; justify-content: space-between; align-items: center; }
@@ -84,7 +84,7 @@ body.digitando #recentes { display: none; }
 #sugs button { text-align: left; background: none; font-weight: 400; padding: 10px 6px; border-radius: 10px; display: grid; gap: 2px; border-bottom: 1px solid var(--line); border-radius: 0; }
 #sugs button b { font-size: 16px; }
 .selo { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 6px; background: #fff1c2; color: #5a4300; margin-left: 6px; vertical-align: 1px; }
-body.digitando #busca { top: calc(8px + env(safe-area-inset-top, 0px)); max-height: none; }
+body.digitando #busca { top: calc(8px + var(--st)); max-height: none; }
 body.digitando #btnAjustes, body.digitando #btnCentro { display: none; }
 .aviso { background: #fff4d6; color: #3d2f00; border-radius: 16px; padding: 14px; display: grid; gap: 8px; }
 .aviso p { margin: 0; font-size: 14px; }
@@ -94,11 +94,11 @@ body.noite .aviso { background: #3a3110; color: #ffe9a8; } body.noite .aviso but
 .acoes { display: flex; gap: 8px; } .acoes > * { flex: 1; }
 .lembrar { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); } .lembrar input { width: 18px; height: 18px; }
 .erro { background: var(--warnbg); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
-#escolhaMapa { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; z-index: 1000; background: var(--acc); color: #fff; border-radius: 16px; padding: 14px; font-weight: 600; box-shadow: var(--sombra); display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+#escolhaMapa { position: fixed; top: calc(12px + var(--st)); left: 12px; right: 12px; z-index: 1000; background: var(--acc); color: #fff; border-radius: 16px; padding: 14px; font-weight: 600; box-shadow: var(--sombra); display: flex; gap: 10px; align-items: center; justify-content: space-between; }
 #escolhaMapa button { background: rgba(255,255,255,.2); color: #fff; padding: 8px 12px; }
 
 /* ---------- estado: rotas ---------- */
-#topoRotas { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 8px; right: 8px; z-index: 1000; background: var(--panel); border-radius: 18px; box-shadow: var(--sombra); display: flex; gap: 10px; align-items: center; padding: 8px 12px 8px 6px; }
+#topoRotas { position: fixed; top: calc(8px + var(--st)); left: 8px; right: 8px; z-index: 1000; background: var(--panel); border-radius: 18px; box-shadow: var(--sombra); display: flex; gap: 10px; align-items: center; padding: 8px 12px 8px 6px; }
 #topoRotas button { background: none; font-size: 22px; padding: 6px 10px; }
 #topoRotas .txt { min-width: 0; } #topoRotas .txt b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #cards { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 4px; -webkit-overflow-scrolling: touch; }
@@ -120,14 +120,14 @@ ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14
 
 /* ---------- estado: navegação ---------- */
 #manobra { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: #0b0e12; color: #fff; border-radius: 0 0 18px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.4);
-  display: flex; gap: 12px; align-items: center; padding: calc(2px + env(safe-area-inset-top, 0px)) 16px 8px; overflow: hidden; min-height: calc(64px + env(safe-area-inset-top, 0px)); }
+  display: flex; gap: 12px; align-items: center; padding: calc(8px + var(--st)) 16px 10px; overflow: hidden; min-height: calc(68px + var(--st)); }
 #manIco { width: 46px; height: 46px; flex: none; display: grid; place-items: center; font-size: 32px; }
 #manIco svg { width: 46px; height: 46px; }
 #manDist { font-size: 24px; font-weight: 800; line-height: 1.1; }
 #manRua { font-size: 18px; font-weight: 700; color: #5cb6ff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #manobra .txt { min-width: 0; }
 #manProg { position: absolute; left: 0; bottom: 0; height: 5px; background: #5cb6ff; width: 0; transition: width .8s linear; }
-#alerta { position: fixed; top: calc(78px + env(safe-area-inset-top, 0px)); left: 10px; right: 10px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
+#alerta { position: fixed; top: calc(92px + var(--st)); left: 10px; right: 10px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
 #alerta big { font-size: 24px; }
 #navBase { position: fixed; left: 0; right: 0; bottom: calc(0px + var(--cb, 0px)); z-index: 1000; background: #15191f; color: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -4px 14px rgba(0,0,0,.35); padding: 8px 14px calc(6px + max(0px, var(--sb) - 20px)); display: grid; gap: 2px; }
 body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
@@ -147,15 +147,15 @@ body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
 #veloAtual.acima { background: var(--cam); } #veloAtual.acima small { color: #fff; }
 #placa { width: 44px; height: 44px; margin-left: -14px; margin-top: -10px; border-radius: 50%; background: #fff; border: 5px solid #d1222f; color: #111; display: grid; place-items: center; font-weight: 800; font-size: 16px; box-shadow: var(--sombra); }
 #btnVoltar { position: fixed; right: 12px; bottom: calc(max(0px, var(--sb) - 20px) + 150px + var(--cb, 0px)); z-index: 950; background: #0b0e12; color: #fff; box-shadow: var(--sombra); border-radius: 999px; padding: 12px 16px; }
-#chipSim { position: fixed; left: 12px; top: calc(82px + env(safe-area-inset-top, 0px)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
-#btnVoz { position: fixed; right: 12px; top: calc(82px + env(safe-area-inset-top, 0px)); width: 48px; height: 48px; font-size: 22px; background: #0b0e12; color: #fff; }
-#alerta:not([hidden]) ~ #btnVoz, #alerta:not([hidden]) ~ #chipSim { top: calc(150px + env(safe-area-inset-top, 0px)); }
+#chipSim { position: fixed; left: 12px; top: calc(96px + var(--st)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
+#btnVoz { position: fixed; right: 12px; top: calc(96px + var(--st)); width: 48px; height: 48px; font-size: 22px; background: #0b0e12; color: #fff; }
+#alerta:not([hidden]) ~ #btnVoz, #alerta:not([hidden]) ~ #chipSim { top: calc(164px + var(--st)); }
 
 /* ---------- botões do mapa e ajustes ---------- */
-#btnAjustes { right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); }
-#btnCentro { right: 12px; top: calc(72px + env(safe-area-inset-top, 0px)); }
+#btnAjustes { right: 12px; top: calc(12px + var(--st)); }
+#btnCentro { right: 12px; top: calc(72px + var(--st)); }
 #ajustes { position: fixed; top: 0; left: 0; right: 0; bottom: calc(0px); z-index: 1200; background: rgba(0,0,0,.35); display: flex; align-items: flex-end; }
-#ajustes .folha { position: static; width: 100%; margin: 8px; margin-bottom: calc(8px + var(--sb) + var(--cb, 0px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - var(--cb, 0px)); }
+#ajustes .folha { position: static; width: 100%; margin: 8px; margin-bottom: calc(8px + var(--sb) + var(--cb, 0px)); max-height: calc(100dvh - 24px - var(--st) - var(--cb, 0px)); }
 .cab { display: flex; justify-content: space-between; align-items: center; } .cab b { font-size: 19px; }
 .tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; }
 .tipos label { display: flex; gap: 8px; align-items: center; } .tipos input { width: 20px; height: 20px; flex: none; }
@@ -231,7 +231,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
   <div class="alca" id="alcaRotas"></div>
   <div class="rolar">
     <div id="cards"></div>
-    <small class="dica" id="notaTempo" hidden>Tempo estimado sem trânsito.</small>
+    <small class="dica" id="notaTempo" hidden>Tempo com o trânsito típico do horário; na viagem, ajusta pela sua velocidade.</small>
     <div id="detalhe" class="extra" hidden></div>
     <div id="msgRotas"></div>
     <button class="prim" id="btnIr" disabled>Ir</button>
@@ -592,7 +592,20 @@ async function calcularOpcoes(o, d, tipos) {
   }
   // se sobrou espaço, completa com a 2ª mais rápida
   for (const r of [...unicas].sort((a, b) => a.min - b.min)) if (ops.length < 3 && !ops.includes(r)) ops.push(Object.assign(r, { tag: ops.some(x => x.tag === "Alternativa") ? "Outra opção" : "Alternativa", pref: "rapida" }));
+  // trânsito típico do horário (não há fonte gratuita de trânsito ao vivo)
+  const f = fatorTransito(new Date());
+  for (const r of ops) { r.minLivre = r.min; r.min = r.min * f; }
   return ops;
+}
+// Multiplica o tempo sem trânsito conforme o dia e a hora em São Paulo.
+// O tempo sem trânsito do OSRM já é otimista (não conta semáforos), por isso nunca fica abaixo de 1,15.
+function fatorTransito(d) {
+  const dia = d.getDay(), h = d.getHours() + d.getMinutes() / 60, util = dia >= 1 && dia <= 5;
+  if (util && ((h >= 7 && h < 10) || (h >= 17 && h < 20))) return 1.5;   // pico
+  if (util && h >= 10 && h < 17) return 1.25;                            // dia útil, fora do pico
+  if (util && h >= 20 && h < 21.5) return 1.25;                          // fim do pico da tarde
+  if (dia === 6 && h >= 10 && h < 16) return 1.2;                        // sábado durante o dia
+  return 1.15;                                                           // noite, madrugada, domingo
 }
 // limites de velocidade do OpenStreetMap para cada trecho da rota
 async function buscarLimites(rota) {
@@ -1119,7 +1132,7 @@ document.addEventListener("visibilitychange", () => { if (NAV && document.visibi
 function iniciarNav(simular) {
   if (!simular) salvarDestino(); // a simulação não entra no histórico
   const r = prepararRota(OPCOES[SEL]);
-  NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), camEtapa: new Map(), ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
+  NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), camEtapa: new Map(), amostras: [], ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
   estado("nav"); $("btnVoltar").hidden = true; $("alerta").hidden = true; $("chipSim").hidden = !simular;
   mostrarLinhas([r.linha], 0);
   destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(); desenharCameras();
@@ -1232,11 +1245,23 @@ function passoNavegacao() {
   if (limite && velGps != null && velGps > limite + TOLERANCIA_KMH && agora - N.ultAvisoVel > AVISO_VEL_S * 1000) { N.ultAvisoVel = agora; falar(`Atenção, o limite aqui é ${limite} quilômetros por hora.`); }
   // chegada e distância
   $("navKm").textContent = fmtDist(resta);
-  $("navMin").textContent = `${fmt(Math.max(1, Math.round(r.min * (resta / r.total))))} min`;
+  // tempo que falta: o previsto, corrigido pelo ritmo real dos últimos minutos (trânsito, semáforos, velocidade do carro)
+  N.amostras.push({ t: agora, a: N.along }); while (N.amostras.length > 2 && agora - N.amostras[0].t > 240000) N.amostras.shift();
+  let fator = N.fatorTempo || 1;
+  const a0 = N.amostras[0], dt = (agora - a0.t) / 1000, da = N.along - a0.a;
+  if (dt >= 45) {
+    const previsto = (r.min * 60 / r.total) * Math.max(da, 1);       // segundos previstos para o trecho andado
+    const razao = Math.min(3, Math.max(0.6, dt / previsto));          // >1: mais devagar que o previsto
+    const peso = Math.min(1, dt / 240) * 0.75;                        // quanto mais tempo observado, mais confia
+    fator = fator + (1 + peso * (razao - 1) - fator) * 0.2;           // suaviza para o número não pular
+  }
+  N.fatorTempo = fator;
+  const restaMin = r.min * (resta / r.total) * fator;
+  $("navMin").textContent = `${fmt(Math.max(1, Math.round(restaMin)))} min`;
   // rua em que o carro está agora
   const atual = [...r.passos].reverse().find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] <= N.along + 1);
   $("ruaAtual").textContent = atual && atual.rua ? atual.rua.replace(/^Avenida /, "Av. ").replace(/^Rua /, "R. ").replace(/^Alameda /, "Al. ") : "";
-  $("navChegada").textContent = hora(new Date(agora + r.min * 60000 * (resta / r.total)));
+  $("navChegada").textContent = hora(new Date(agora + restaMin * 60000));
   seguirCarro();
 }
 async function recalcular() {
