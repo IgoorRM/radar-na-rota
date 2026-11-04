@@ -2,7 +2,7 @@
 
 Projeto pessoal e sem fins lucrativos: um app web (PWA) que mostra os equipamentos fixos de fiscalização eletrônica divulgados publicamente pela CET-SP ao longo de uma rota de carro na cidade de São Paulo, e compara rotas alternativas.
 
-Funções: até 3 opções de rota com o número de radares de cada uma, navegação curva a curva com voz, seta de direção, recálculo automático, velocidade e limite da via (OpenStreetMap), tema claro/escuro e modo simulação. A versão anterior fica em `v1/` como reserva.
+Funções: até 3 opções de rota com o número de radares de cada uma, navegação curva a curva com voz, seta de direção, mapa inclinado em 3D na navegação, recálculo automático, velocidade e limite da via (OpenStreetMap), tema claro/escuro e modo simulação. A versão anterior fica em `v1/` como reserva.
 
 **Não é um detector de radar.** O app não detecta, não bloqueia e não interfere em nenhum equipamento. Ele só mostra informação pública, como fazem os apps de navegação.
 
@@ -25,7 +25,7 @@ Sem cadastro, servidor próprio, anúncios ou rastreamento. A localização só 
 - Câmeras: painel público "Fiscalização Eletrônica – CET" (CET-SP), consultado no navegador de quem usa o app.
 - Mapa e dados viários: © colaboradores do OpenStreetMap, ODbL — https://www.openstreetmap.org/copyright
 - Rotas: Valhalla (servidor público da FOSSGIS e.V.). Endereços: Photon (komoot) e Nominatim.
-- Leaflet (BSD-2) e o plugin leaflet-rotate (GPL-3.0), carregado à parte pelo CDN jsDelivr.
+- Desenho do mapa: OpenFreeMap / OpenMapTiles (dados do OpenStreetMap). Biblioteca de mapa: MapLibre GL JS (BSD-3).
 - Código deste repositório: licença MIT.
 
 Se alguma fonte pedir a retirada dos dados, eles serão removidos.

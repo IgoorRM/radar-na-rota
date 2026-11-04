@@ -11,9 +11,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
 <style>
 :root { --bg:#eef2f6; --panel:#fff; --fg:#17202a; --muted:#5e6b78; --line:#dbe2ea; --soft:#f2f5f8;
   --acc:#1764c4; --acc2:#0f4f9e; --cam:#d1222f; --ok:#1f8a4c; --okbg:#e3f5ea; --warnbg:#fde6e8; --sombra:0 6px 24px rgba(20,35,60,.18); }
@@ -23,11 +22,7 @@ body.noite { --bg:#0f1419; --panel:#1b232c; --fg:#e9eef3; --muted:#9aa8b6; --lin
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
-/* palco do mapa: na navegação o mapa inclina em perspectiva (visão 3D) */
-#palco { position: fixed; inset: 0; z-index: 0; overflow: hidden; perspective: 700px; perspective-origin: 50% 0%; background: var(--bg); }
-#mapa { position: absolute; inset: 0; background: var(--bg); }
-body.em3d[data-estado="nav"] #mapa { left: -70%; right: -70%; top: -50%; bottom: 0; transform-origin: 50% 100%; transform: rotateX(45deg); }
-body.em3d[data-estado="nav"] .leaflet-control-attribution { display: none; }
+#mapa { position: fixed; inset: 0; z-index: 0; background: var(--bg); }
 #creditoNav { font-size: 10px; color: var(--muted); text-align: center; }
 /* alça para puxar o painel para baixo/cima */
 .alca { flex: none; height: 26px; display: grid; place-items: center; touch-action: none; cursor: grab; }
@@ -52,10 +47,8 @@ body.digitando #cabBusca, body.trocando #cabBusca { display: flex; }
 .via { font-size: 12px; color: var(--muted); max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #detalhe .cab { margin-bottom: 2px; } #detalhe .cab button { padding: 4px 10px; font-size: 14px; }
 .perto { color: #a86a00; } body.noite .perto { color: #ffc95c; }
-body.noite .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.7); }
-.leaflet-control-attribution { font-size: 10px; }
-body.noite .leaflet-control-attribution { background: rgba(27,35,44,.8) !important; color: #9aa8b6; }
-body.noite .leaflet-control-attribution a { color: #7ab4ff; }
+.credito { font-size: 10px; color: var(--muted); text-align: center; }
+.credito a { color: inherit; }
 
 button { font: 600 16px system-ui, -apple-system, sans-serif; border: 0; cursor: pointer; color: var(--fg); background: var(--soft); border-radius: 14px; padding: 12px 16px; }
 button:disabled { opacity: .5; }
@@ -115,25 +108,37 @@ ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14
 @keyframes gira { to { transform: rotate(360deg); } }
 
 /* ---------- estado: navegação ---------- */
-#manobra { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 8px; right: 8px; z-index: 1000; background: #12407a; color: #fff; border-radius: 20px; box-shadow: var(--sombra); display: flex; gap: 14px; align-items: center; padding: 12px 16px; }
-#manIco { font-size: 40px; line-height: 1; width: 46px; text-align: center; flex: none; }
-#manDist { font-size: 28px; font-weight: 800; line-height: 1.1; }
-#manRua { font-size: 16px; opacity: .92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#manobra { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: #0b0e12; color: #fff; border-radius: 0 0 20px 20px; box-shadow: 0 4px 18px rgba(0,0,0,.45);
+  display: flex; gap: 16px; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 16px; overflow: hidden; }
+#manIco { width: 64px; height: 64px; flex: none; display: grid; place-items: center; font-size: 44px; }
+#manIco svg { width: 64px; height: 64px; }
+#manDist { font-size: 30px; font-weight: 800; line-height: 1.1; }
+#manRua { font-size: 22px; font-weight: 700; color: #5cb6ff; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #manobra .txt { min-width: 0; }
-#alerta { position: fixed; top: calc(108px + env(safe-area-inset-top, 0px)); left: 8px; right: 8px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
+#manProg { position: absolute; left: 0; bottom: 0; height: 5px; background: #5cb6ff; width: 0; transition: width .8s linear; }
+#alerta { position: fixed; top: calc(118px + env(safe-area-inset-top, 0px)); left: 10px; right: 10px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
 #alerta big { font-size: 24px; }
-#navBase { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 1000; background: var(--panel); border-radius: 22px; box-shadow: var(--sombra); padding: 12px 14px; display: grid; gap: 10px; }
-#navNums { display: flex; justify-content: space-between; align-items: baseline; font-variant-numeric: tabular-nums; }
-#navNums div { text-align: center; } #navNums b { font-size: 22px; display: block; } #navNums small { font-size: 12px; }
-#navRad.tem b { color: var(--cam); } #navRad.zero b { color: var(--ok); }
-#velo { position: fixed; left: 14px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); z-index: 950; display: flex; gap: 8px; align-items: center; }
-#veloAtual { width: 66px; height: 66px; border-radius: 50%; background: var(--panel); box-shadow: var(--sombra); display: grid; place-items: center; text-align: center; line-height: 1; }
-#veloAtual b { font-size: 26px; } #veloAtual small { font-size: 11px; display: block; }
-#veloAtual.acima { background: var(--cam); color: #fff; } #veloAtual.acima small { color: #fff; }
-#placa { width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 6px solid #d1222f; color: #111; display: grid; place-items: center; font-weight: 800; font-size: 19px; box-shadow: var(--sombra); }
-#btnVoltar { position: fixed; right: 12px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); z-index: 950; background: var(--panel); box-shadow: var(--sombra); border-radius: 999px; padding: 12px 16px; }
-#chipSim { position: fixed; right: 12px; top: calc(110px + env(safe-area-inset-top, 0px)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
-#btnVoz { position: fixed; right: 12px; bottom: calc(210px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; font-size: 20px; }
+#navBase { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; background: #15191f; color: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 18px rgba(0,0,0,.4); padding: 10px 16px calc(6px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; }
+body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
+#navLinha { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.redondo { width: 56px; height: 56px; border-radius: 50%; padding: 0; display: grid; place-items: center; background: rgba(127,140,155,.22); color: inherit; flex: none; }
+.redondo svg { width: 26px; height: 26px; }
+#navCentro { text-align: center; font-variant-numeric: tabular-nums; min-width: 0; }
+#navChegada { font-size: 34px; font-weight: 800; display: block; line-height: 1.1; }
+#navCentro small { font-size: 16px; color: inherit; opacity: .9; }
+#navRad.tem { color: #ff6b75; font-weight: 700; } #navRad.zero { color: #3fbf7f; font-weight: 700; }
+.rotulo { font-size: 11px; text-align: center; opacity: .7; margin-top: 2px; }
+#ruaAtual { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(126px + env(safe-area-inset-bottom, 0px)); z-index: 950; background: #0b0e12; color: #fff; font-weight: 700; font-size: 17px; border-radius: 999px; padding: 10px 20px; max-width: 50vw; text-align: center; box-shadow: var(--sombra); line-height: 1.2; }
+#ruaAtual:empty { display: none; }
+#velo { position: fixed; left: 12px; bottom: calc(120px + env(safe-area-inset-bottom, 0px)); z-index: 950; display: flex; align-items: flex-start; }
+#veloAtual { width: 72px; height: 72px; border-radius: 50%; background: #0b0e12; color: #fff; box-shadow: var(--sombra); display: grid; place-items: center; text-align: center; line-height: 1; border: 3px solid rgba(255,255,255,.15); }
+#veloAtual b { font-size: 30px; } #veloAtual small { font-size: 11px; display: block; color: #cfd6de; }
+#veloAtual.acima { background: var(--cam); } #veloAtual.acima small { color: #fff; }
+#placa { width: 44px; height: 44px; margin-left: -14px; margin-top: -10px; border-radius: 50%; background: #fff; border: 5px solid #d1222f; color: #111; display: grid; place-items: center; font-weight: 800; font-size: 16px; box-shadow: var(--sombra); }
+#btnVoltar { position: fixed; right: 12px; bottom: calc(196px + env(safe-area-inset-bottom, 0px)); z-index: 950; background: #0b0e12; color: #fff; box-shadow: var(--sombra); border-radius: 999px; padding: 12px 16px; }
+#chipSim { position: fixed; left: 12px; top: calc(122px + env(safe-area-inset-top, 0px)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
+#btnVoz { position: fixed; right: 12px; top: calc(122px + env(safe-area-inset-top, 0px)); width: 54px; height: 54px; font-size: 22px; background: #0b0e12; color: #fff; }
+#alerta:not([hidden]) ~ #btnVoz, #alerta:not([hidden]) ~ #chipSim { top: calc(196px + env(safe-area-inset-top, 0px)); }
 
 /* ---------- botões do mapa e ajustes ---------- */
 #btnAjustes { right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); }
@@ -152,14 +157,15 @@ body:not([data-estado="busca"]) .so-busca, body:not([data-estado="rotas"]) .so-r
 body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; }
 
 /* seta do usuário */
-.carro { background: none; border: 0; }
-.carro .seta { width: 44px; height: 44px; transition: transform .4s linear; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.carro { width: 48px; height: 48px; }
+.carro .seta { width: 48px; height: 48px; display: block; filter: drop-shadow(0 3px 3px rgba(0,0,0,.4)); transition: transform .3s; }
+body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
 .carro.semdir .seta path { opacity: .55; }
-.pino { background: none; border: 0; }
+.radar, .pino { cursor: pointer; line-height: 0; }
 </style>
 </head>
 <body data-estado="busca">
-<div id="palco"><div id="mapa"></div></div>
+<div id="mapa"></div>
 
 <!-- botões do mapa -->
 <button id="btnAjustes" class="flut so-busca" aria-label="Ajustes">⚙️</button>
@@ -199,6 +205,7 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
       <button id="limparD" aria-label="Apagar destino" hidden>✕</button></div>
     <div id="sugs"></div>
     <div id="msgBusca"></div>
+    <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas Valhalla/FOSSGIS · câmeras CET-SP</div>
   </div>
 </section>
 <div id="escolhaMapa" hidden><span id="escolhaTxt">Toque no mapa para marcar o destino</span><button id="cancelaMapa">Cancelar</button></div>
@@ -217,20 +224,25 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
     <button class="prim" id="btnIr" disabled>Ir</button>
     <div class="links extra"><a href="#" id="btnSimular">▶ Simular viagem</a><a href="#" id="btnGmaps">Abrir no Google Maps</a></div>
     <details id="passos" class="extra"><summary>Passo a passo</summary><ol id="listaPassos"></ol></details>
+    <div class="credito">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · OpenMapTiles · rotas Valhalla/FOSSGIS · câmeras CET-SP</div>
   </div>
 </section>
 
 <!-- ===== estado: navegação ===== -->
-<div id="manobra" class="so-nav"><div id="manIco">↑</div><div class="txt"><div id="manDist">—</div><div id="manRua">Siga a rota</div></div></div>
+<div id="manobra" class="so-nav"><div id="manIco"></div><div class="txt"><div id="manDist">—</div><div id="manRua">Siga a rota</div></div><div id="manProg"></div></div>
 <div id="alerta" class="so-nav" hidden></div>
 <div id="chipSim" class="so-nav" hidden>SIMULAÇÃO</div>
-<div id="velo" class="so-nav"><div id="veloAtual"><div><b id="veloNum">–</b><small>km/h</small></div></div><div id="placa" hidden></div></div>
 <button id="btnVoz" class="flut so-nav" aria-label="Ligar ou desligar a voz">🔊</button>
+<div id="velo" class="so-nav"><div id="veloAtual"><div><b id="veloNum">–</b><small>km/h</small></div></div><div id="placa" hidden></div></div>
+<div id="ruaAtual" class="so-nav"></div>
 <button id="btnVoltar" class="so-nav" hidden>◎ Voltar a mim</button>
 <section id="navBase" class="so-nav">
-  <div id="navNums"><div><b id="navChegada">--:--</b><small>chegada</small></div><div><b id="navKm">–</b><small>restante</small></div><div id="navRad"><b id="navRadN">0</b><small>radares à frente</small></div></div>
-  <div class="acoes"><button id="btnSair">Sair</button><button id="btnTrocar" class="prim">Trocar destino</button></div>
-  <div id="creditoNav">© OpenStreetMap · rotas Valhalla/FOSSGIS · câmeras CET-SP</div>
+  <div id="navLinha">
+    <div><button id="btnTrocar" class="redondo" aria-label="Trocar destino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button><div class="rotulo">Destino</div></div>
+    <div id="navCentro"><b id="navChegada">--:--</b><small><span id="navMin">–</span> · <span id="navKm">–</span> · <span id="navRad" class="zero"><span id="navRadN">0</span> radares</span></small></div>
+    <div><button id="btnSair" class="redondo" aria-label="Sair da navegação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="rotulo">Sair</div></div>
+  </div>
+  <div id="creditoNav">© OpenStreetMap · OpenFreeMap · OpenMapTiles · Valhalla · CET-SP</div>
 </section>
 
 <!-- ===== ajustes ===== -->
@@ -272,12 +284,12 @@ body.escolhendo #busca, body.escolhendo #btnAjustes { display: none !important; 
       <h3>Fontes e créditos</h3>
       <ul>
         <li>Câmeras: painel público "Fiscalização Eletrônica – CET" da Companhia de Engenharia de Tráfego de São Paulo. Só equipamentos fixos ativos na cidade de São Paulo.</li>
-        <li>Mapa, dados viários e limites de velocidade: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>, licença ODbL.</li>
+        <li>Mapa, dados viários e limites de velocidade: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>, licença ODbL. Desenho do mapa: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> e <a href="https://openmaptiles.org" target="_blank" rel="noopener">OpenMapTiles</a>.</li>
         <li>Rotas: <a href="https://valhalla.github.io/valhalla/" target="_blank" rel="noopener">Valhalla</a>, servidor público mantido pela FOSSGIS e.V.</li>
         <li>Busca de endereços: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a> (komoot) e <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a>, com dados do OpenStreetMap.</li>
-        <li>Bibliotecas: <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a> (BSD-2) e <a href="https://github.com/Raruto/leaflet-rotate" target="_blank" rel="noopener">leaflet-rotate</a> (GPL-3.0).</li>
+        <li>Biblioteca de mapa: <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> (BSD-3).</li>
       </ul>
-      <p>Se alguma fonte pedir a retirada dos dados, eles serão removidos. Código aberto sob licença MIT; o plugin leaflet-rotate é carregado à parte sob sua própria licença.</p>
+      <p>Se alguma fonte pedir a retirada dos dados, eles serão removidos. Código aberto sob licença MIT.</p>
     </details>
     <div class="dica"><a href="v1/">Versão anterior (reserva)</a></div>
   </div></section>
@@ -307,7 +319,6 @@ const hora = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-di
 function estado(s) {
   document.body.dataset.estado = s;
   $("infoRadar").hidden = true;
-  if (typeof map !== "undefined") map.invalidateSize({ pan: false }); // o tamanho do mapa muda na visão 3D
 }
 
 // ================= base de câmeras da CET =================
@@ -478,35 +489,74 @@ async function buscarLimites(rota) {
   } catch {}
 }
 
-// ================= mapa =================
-const map = L.map("mapa", { zoomControl: false, rotate: true, bearing: 0, touchRotate: false, shiftKeyRotate: false, rotateControl: false, compassBearing: false }).setView([-23.58, -46.64], 12);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · rotas Valhalla/FOSSGIS · câmeras CET-SP' }).addTo(map);
-const camLayer = L.layerGroup().addTo(map), rotaLayer = L.layerGroup().addTo(map);
+// ================= mapa (MapLibre + estilos gratuitos da OpenFreeMap) =================
+const ESTILO = { claro: "https://tiles.openfreemap.org/styles/liberty", escuro: "https://tiles.openfreemap.org/styles/fiord" };
+const ll = (lat, lon) => [lon, lat];                       // MapLibre usa [lon, lat]
+const map = new maplibregl.Map({ container: "mapa", style: ESTILO.claro, center: ll(-23.58, -46.64), zoom: 11.5,
+  attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false, maxPitch: 70 });
+map.touchZoomRotate.disableRotation();
+let estiloAtual = ESTILO.claro;
+function trocarBase(noite) { const e = noite ? ESTILO.escuro : ESTILO.claro; if (e === estiloAtual) return; estiloAtual = e; map.setStyle(e); }
 const pts = { o: null, d: null };
 let marcaO = null, marcaD = null, origemGps = false;
 let OPCOES = [], SEL = 0, destaque = new Set();
-const setBearing = g => { if (map.setBearing) map.setBearing(g); };
-const bearingMapa = () => map.getBearing ? map.getBearing() : 0;
+function limites(listas, folga = 0) { // [[oeste, sul], [leste, norte]] de várias linhas [[lat, lon], ...]
+  let s = 90, n = -90, w = 180, e = -180;
+  for (const l of listas) for (const [la, lo] of l) { s = Math.min(s, la); n = Math.max(n, la); w = Math.min(w, lo); e = Math.max(e, lo); }
+  return [[w - folga, s - folga], [e + folga, n + folga]];
+}
+function enquadrar(listas, baixo) { map.fitBounds(limites(listas), { padding: { top: 130, bottom: baixo, left: 36, right: 36 }, pitch: 0, bearing: 0, duration: 600, maxZoom: 17 }); }
+function resetVista() { map.easeTo({ pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 }, duration: 500 }); }
+
+// camadas das rotas (precisam ser recriadas quando o estilo claro/escuro troca)
+let geoRotas = { type: "FeatureCollection", features: [] };
+function primeiraCamadaDeTexto() { return (map.getStyle().layers || []).find(l => l.type === "symbol")?.id; }
+function garantirCamadas() {
+  if (map.getSource("rotas")) return;
+  map.addSource("rotas", { type: "geojson", data: geoRotas });
+  const antes = primeiraCamadaDeTexto();
+  const largura = k => ["interpolate", ["linear"], ["zoom"], 10, 3 * k, 14, 6 * k, 18, 14 * k];
+  map.addLayer({ id: "rotas-outras", type: "line", source: "rotas", filter: ["==", ["get", "sel"], false], layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#8f9cab", "line-width": largura(1), "line-opacity": .9 } }, antes);
+  map.addLayer({ id: "rotas-borda", type: "line", source: "rotas", filter: ["==", ["get", "sel"], true], layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#0d3f80", "line-width": largura(1.5) } }, antes);
+  map.addLayer({ id: "rotas-sel", type: "line", source: "rotas", filter: ["==", ["get", "sel"], true], layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#2f8cff", "line-width": largura(1) } }, antes);
+}
+// mapa limpo para dirigir: sem prédios em 3D nem ícones de comércio
+function simplificarEstilo() {
+  for (const l of map.getStyle().layers || []) {
+    const sl = l["source-layer"] || "";
+    if (l.type === "fill-extrusion" || (l.type === "symbol" && /poi|aerodrome_label/.test(sl))) map.setLayoutProperty(l.id, "visibility", "none");
+  }
+}
+// recria as camadas sempre que um estilo novo termina de carregar (a troca claro/escuro apaga tudo)
+function prepararEstilo() { if (!map.isStyleLoaded() || map.getSource("rotas")) return; simplificarEstilo(); garantirCamadas(); }
+for (const ev of ["style.load", "styledata", "idle"]) map.on(ev, prepararEstilo);
+map.on("click", "rotas-outras", e => { const i = e.features?.[0]?.properties?.idx; if (i != null && document.body.dataset.estado === "rotas") selecionar(+i); });
+function mostrarLinhas(linhas, sel) { // linhas: [[lat, lon], ...][]; sel: índice da escolhida
+  geoRotas = { type: "FeatureCollection", features: linhas.map((l, i) => ({ type: "Feature", properties: { idx: i, sel: i === sel }, geometry: { type: "LineString", coordinates: l.map(([a, b]) => [b, a]) } })) };
+  // a escolhida por último, para ficar por cima
+  geoRotas.features.sort((a, b) => a.properties.sel - b.properties.sel);
+  map.getSource("rotas")?.setData(geoRotas);
+}
+function limparRotas() { mostrarLinhas([], -1); }
 
 const pinoSvg = c => `<svg width="34" height="44" viewBox="0 0 34 44"><path d="M17 43C17 43 3 26 3 16a14 14 0 0 1 28 0c0 10-14 27-14 27z" fill="${c}" stroke="#fff" stroke-width="3"/><circle cx="17" cy="16" r="5" fill="#fff"/></svg>`;
+function elemento(classe, html) { const d = document.createElement("div"); d.className = classe; d.innerHTML = html; return d; }
+function tirarDestino() { if (marcaD) { marcaD.remove(); marcaD = null; } }
 function marcarDestino(arrastavel) {
-  if (marcaD) map.removeLayer(marcaD);
+  tirarDestino();
   if (!pts.d) return;
-  marcaD = L.marker([pts.d.lat, pts.d.lon], { draggable: arrastavel, autoPan: true, zIndexOffset: 500,
-    icon: L.divIcon({ className: "pino", html: pinoSvg(COR.cam), iconSize: [34, 44], iconAnchor: [17, 43] }) }).addTo(map);
-  marcaD.on("dragend", () => { const p = marcaD.getLatLng(); pts.d = { ...pts.d, lat: p.lat, lon: p.lng, aprox: false }; $("rotasAprox").hidden = true; abrirRotas(); });
+  marcaD = new maplibregl.Marker({ element: elemento("pino", pinoSvg(COR.cam)), anchor: "bottom", draggable: arrastavel }).setLngLat(ll(pts.d.lat, pts.d.lon)).addTo(map);
+  marcaD.on("dragend", () => { const p = marcaD.getLngLat(); pts.d = { ...pts.d, lat: p.lat, lon: p.lng, aprox: false }; $("rotasAprox").hidden = true; abrirRotas(); });
 }
 function marcarOrigem() {
-  if (marcaO) { map.removeLayer(marcaO); marcaO = null; }
-  if (pts.o && !origemGps) marcaO = L.circleMarker([pts.o.lat, pts.o.lon], { radius: 9, color: "#fff", weight: 3, fillColor: "#1f8a4c", fillOpacity: 1 }).addTo(map);
+  if (marcaO) { marcaO.remove(); marcaO = null; }
+  if (pts.o && !origemGps) marcaO = new maplibregl.Marker({ element: elemento("", '<div style="width:18px;height:18px;border-radius:50%;background:#1f8a4c;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>') }).setLngLat(ll(pts.o.lat, pts.o.lon)).addTo(map);
 }
 function tiposMarcados() { return new Set([...document.querySelectorAll("#tipos input:checked")].map(i => i.value)); }
 
 // ícone de radar: balão com uma câmera de fiscalização
 const radarSvg = (cor, w) => `<svg width="${w}" height="${Math.round(w * 34 / 30)}" viewBox="0 0 30 34"><path d="M6 2h18a4 4 0 0 1 4 4v15a4 4 0 0 1-4 4h-5l-4 6-4-6H6a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="${cor}" stroke="#fff" stroke-width="2"/><rect x="6.5" y="8.5" width="12" height="9.5" rx="2" fill="#fff"/><path d="M18.5 11.5l5-2.6v8.7l-5-2.6z" fill="#fff"/><circle cx="12.5" cy="13.2" r="2.6" fill="${cor}"/></svg>`;
-const ICO = {};
-for (const [k, cor, w] of [["rota", "#d1222f", 34], ["perto", "#e08a00", 28], ["marcado", "#d1222f", 24], ["outro", "#8f9cab", 18]])
-  ICO[k] = L.divIcon({ className: "radar", html: radarSvg(cor, w), iconSize: [w, Math.round(w * 34 / 30)], iconAnchor: [w / 2, Math.round(w * 34 / 30)] });
+const ICO = { rota: ["#d1222f", 34, 4], perto: ["#e08a00", 28, 3], marcado: ["#d1222f", 24, 2], outro: ["#8f9cab", 18, 1] };
 let pertoIds = new Set();
 function mostrarRadar(c) {
   const tipos = tiposMarcados(), na = destaque.has(c.id), pe = pertoIds.has(c.id);
@@ -517,17 +567,27 @@ function mostrarRadar(c) {
   $("infoRadar").hidden = false;
 }
 $("fecharRadar").onclick = () => { $("infoRadar").hidden = true; };
+// marcadores de radar: só os da área visível; reaproveita os que já existem (sem piscar na navegação)
+const camMarcas = new Map();
 function desenharCameras() {
-  camLayer.clearLayers();
   const longe = map.getZoom() < 14; // de longe, só os radares da rota escolhida
-  const b = map.getBounds().pad(0.3), tipos = tiposMarcados(), nav = document.body.dataset.estado === "nav";
+  const nav = document.body.dataset.estado === "nav", tipos = tiposMarcados();
+  const b = map.getBounds(), dlat = (b.getNorth() - b.getSouth()) * .3, dlon = (b.getEast() - b.getWest()) * .3;
+  const quer = new Map();
   for (const c of CAMERAS) {
     const ev = c.enq.some(e => tipos.has(e)), na = destaque.has(c.id), pe = pertoIds.has(c.id);
     if (longe && !na) continue;
-    if (!b.contains([c.lat, c.lon])) continue;
-    if (nav && !ev) continue;
-    L.marker([c.lat, c.lon], { icon: na ? ICO.rota : pe ? ICO.perto : ev ? ICO.marcado : ICO.outro, zIndexOffset: na ? 400 : pe ? 300 : ev ? 200 : 0 })
-      .on("click", ev2 => { L.DomEvent.stop(ev2); mostrarRadar(c); }).addTo(camLayer);
+    if (c.lat < b.getSouth() - dlat || c.lat > b.getNorth() + dlat || c.lon < b.getWest() - dlon || c.lon > b.getEast() + dlon) continue;
+    if (nav && (!ev || (ultimaPos && distM(ultimaPos, [c.lat, c.lon]) > 1500))) continue; // na navegação: só os próximos
+    quer.set(c.id, { c, tipo: na ? "rota" : pe ? "perto" : ev ? "marcado" : "outro" });
+  }
+  for (const [id, m] of camMarcas) if (!quer.has(id) || quer.get(id).tipo !== m.tipo) { m.marca.remove(); camMarcas.delete(id); }
+  for (const [id, { c, tipo }] of quer) {
+    if (camMarcas.has(id)) continue;
+    const [cor, w, z] = ICO[tipo], el = elemento("radar", radarSvg(cor, w));
+    el.style.zIndex = z;
+    el.addEventListener("click", ev => { ev.stopPropagation(); mostrarRadar(c); });
+    camMarcas.set(id, { tipo, marca: new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(ll(c.lat, c.lon)).addTo(map) });
   }
 }
 let tCam; map.on("moveend", () => { clearTimeout(tCam); tCam = setTimeout(desenharCameras, 250); });
@@ -647,7 +707,7 @@ $("cancelaMapa").onclick = pararEscolha;
 map.on("click", async e => {
   if (!escolhendo) return;
   const k = escolhendo; pararEscolha();
-  const lat = e.latlng.lat, lon = e.latlng.lng;
+  const lat = e.lngLat.lat, lon = e.lngLat.lng;
   const it = { lat, lon, titulo: "Ponto marcado no mapa", detalhe: "" };
   const nome = await enderecoDe(lat, lon);
   if (nome) it.titulo = nome;
@@ -662,16 +722,15 @@ async function enderecoDe(lat, lon) {
 }
 
 // ================= GPS e seta do usuário =================
-const setaSvg = `<svg class="seta" viewBox="0 0 44 44"><path d="M22 4 L37 38 L22 30 L7 38 Z" fill="#1764c4" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
+const setaSvg = `<svg class="seta" viewBox="0 0 44 44"><path d="M22 3 L38 39 L22 30 L6 39 Z" fill="#2f8cff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
 let gpsWatch = null, carro = null, ultimaPos = null, rumoAtual = null, posRumo = null, velGps = null;
+// a seta fica "deitada" no mapa e gira junto com ele (como num navegador de carro)
 function atualizarCarro() {
   if (!ultimaPos) return;
-  if (!carro) carro = L.marker(ultimaPos, { interactive: false, zIndexOffset: 1000, icon: L.divIcon({ className: "carro semdir", html: setaSvg, iconSize: [44, 44], iconAnchor: [22, 22] }) }).addTo(map);
-  else carro.setLatLng(ultimaPos);
-  const el = carro.getElement();
-  if (!el) return;
-  el.classList.toggle("semdir", rumoAtual === null);
-  el.querySelector(".seta").style.transform = `rotate(${(rumoAtual || 0) + bearingMapa()}deg)`;
+  if (!carro) carro = new maplibregl.Marker({ element: elemento("carro semdir", setaSvg), rotationAlignment: "map", pitchAlignment: "map" }).setLngLat(ll(...ultimaPos)).addTo(map);
+  else carro.setLngLat(ll(...ultimaPos));
+  carro.setRotation(rumoAtual || 0);
+  carro.getElement().classList.toggle("semdir", rumoAtual === null);
 }
 // recebe posição do GPS real ou da simulação
 function novaPosicao(p) {
@@ -697,7 +756,7 @@ function usarMinhaLocalizacao() {
     origemGps = true; marcarOrigem(); $("msgBusca").innerHTML = ""; atualizarBotoesBusca();
     novaPosicao({ lat: p.coords.latitude, lon: p.coords.longitude, speed: p.coords.speed, heading: p.coords.heading });
     $("o").value = "Minha localização";
-    if (!pts.d) map.setView(ultimaPos, 16);
+    if (!pts.d) map.easeTo({ center: ll(...ultimaPos), zoom: 16, duration: 600 });
     iniciarGps();
     const rua = await enderecoDe(p.coords.latitude, p.coords.longitude);
     if (rua && origemGps) $("o").value = `Minha localização (${rua})`;
@@ -707,7 +766,7 @@ function usarMinhaLocalizacao() {
   }, { enableHighAccuracy: true, timeout: 15000 });
 }
 $("aqui").onclick = () => { fecharTeclado(); usarMinhaLocalizacao(); };
-$("btnCentro").onclick = () => { if (ultimaPos) map.setView(ultimaPos, 16); else usarMinhaLocalizacao(); };
+$("btnCentro").onclick = () => { if (ultimaPos) map.easeTo({ center: ll(...ultimaPos), zoom: 16, bearing: 0, pitch: 0, duration: 600 }); else usarMinhaLocalizacao(); };
 
 // ================= estado: rotas =================
 let calcSeq = 0;
@@ -719,15 +778,15 @@ async function abrirRotas() {
     if (origemGps && ultimaPos) pts.o = { lat: ultimaPos[0], lon: ultimaPos[1], nome: "Minha localização" };
     else { estado("busca"); $("msgBusca").innerHTML = `<div class="erro">Escolha a saída: toque em 📍 para usar sua localização ou digite um endereço.</div>`; $("o").focus(); return; }
   }
-  estado("rotas"); setBearing(0);
+  estado("rotas"); resetVista();
   $("rotasDe").textContent = "Saindo de " + (origemGps ? "minha localização" : pts.o.nome);
   $("rotasPara").textContent = pts.d.nome + (pts.d.detalhe ? ` · ${pts.d.detalhe}` : "");
   $("rotasAprox").hidden = !pts.d.aprox;
   marcarOrigem(); marcarDestino(true);
-  rotaLayer.clearLayers(); destaque = new Set(); OPCOES = [];
+  limparRotas(); destaque = new Set(); OPCOES = [];
   $("cards").innerHTML = ""; $("detalhe").hidden = true; $("btnIr").disabled = true;
   $("msgRotas").innerHTML = `<div class="carregando">Calculando rotas e conferindo radares…</div>`;
-  map.fitBounds(L.latLngBounds([[pts.o.lat, pts.o.lon], [pts.d.lat, pts.d.lon]]), { paddingTopLeft: [40, 110], paddingBottomRight: [40, 320] });
+  enquadrar([[[pts.o.lat, pts.o.lon], [pts.d.lat, pts.d.lon]]], 320);
   const n = ++calcSeq;
   try {
     await garantirCameras();
@@ -742,26 +801,19 @@ async function abrirRotas() {
   }
 }
 function desenharRotas() {
-  rotaLayer.clearLayers();
-  OPCOES.forEach((r, i) => { if (i !== SEL) L.polyline(r.linha, { color: COR.outra, weight: 7, opacity: .85 }).on("click", () => selecionar(i)).addTo(rotaLayer); });
+  mostrarLinhas(OPCOES.map(r => r.linha), SEL);
   const r = OPCOES[SEL];
-  L.polyline(r.linha, { color: "#fff", weight: 11, opacity: .95 }).addTo(rotaLayer);
-  const linha = L.polyline(r.linha, { color: COR.rota, weight: 7, opacity: 1 }).addTo(rotaLayer);
   destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(r.perto.map(c => c.id));
   desenharCameras();
-  return linha;
 }
 function porTipo(cams) {
   const t = {}; for (const c of cams) for (const e of c.enq) if (tiposMarcados().has(e)) t[e] = (t[e] || 0) + 1;
   return Object.entries(t).map(([k, v]) => `${v} ${LEG[k] || k}`.toLowerCase()).join(", ");
 }
-function selecionar(i, enquadrar) {
+function selecionar(i, ajustarVista) {
   SEL = i;
-  const linha = desenharRotas();
-  if (enquadrar) {
-    const todas = L.latLngBounds([]); OPCOES.forEach(r => todas.extend(L.polyline(r.linha).getBounds()));
-    map.fitBounds(todas, { paddingTopLeft: [30, 110], paddingBottomRight: [30, $("folhaRotas").offsetHeight + 30] });
-  }
+  desenharRotas();
+  if (ajustarVista) enquadrar(OPCOES.map(r => r.linha), $("folhaRotas").offsetHeight + 30);
   $("cards").innerHTML = "";
   OPCOES.forEach((r, j) => {
     const b = document.createElement("button"); b.type = "button"; b.className = "card" + (j === SEL ? " sel" : "");
@@ -795,7 +847,7 @@ function abrirDetalhe() {
   el.innerHTML = h; el.hidden = false;
   $("fecharDet").onclick = e => { e.stopPropagation(); fecharDetalhe(); };
 }
-$("voltarBusca").onclick = () => { calcSeq++; rotaLayer.clearLayers(); destaque = new Set(); if (marcaD) { map.removeLayer(marcaD); marcaD = null; } estado("busca"); desenharCameras(); };
+$("voltarBusca").onclick = () => { calcSeq++; limparRotas(); destaque = new Set(); pertoIds = new Set(); tirarDestino(); estado("busca"); desenharCameras(); };
 $("btnIr").onclick = () => iniciarNav(false);
 $("btnSimular").onclick = e => { e.preventDefault(); if (OPCOES.length) iniciarNav(true); };
 $("btnGmaps").onclick = e => { e.preventDefault(); if (OPCOES.length) location.href = gmapsUrl(OPCOES[SEL].linha); };
@@ -823,6 +875,21 @@ for (const b of $("voz").children) b.onclick = () => { vozLigada = b.dataset.v =
 
 // ================= navegação =================
 let NAV = null, SIM = null, wakeLock = null;
+const SETA = {
+  reto: '<path d="M32 58V10M18 24L32 10l14 14"/>',
+  dir: '<path d="M20 58V34a12 12 0 0 1 12-12h20M42 10l12 12-12 12"/>',
+  leveDir: '<path d="M22 58V38l26-26M30 12h18v18"/>',
+  forteDir: '<path d="M22 10v30a8 8 0 0 0 14 5l14-15M36 30h14v14"/>',
+  retorno: '<path d="M42 58V26a12 12 0 0 0-24 0v14M8 30l10 12 10-12"/>',
+  rotatoria: '<circle cx="32" cy="24" r="10"/><path d="M32 58V34M42 24h12M46 16l8 8-8 8"/>' };
+function iconeManobra(t) {
+  if ([4, 5, 6].includes(t)) return "🏁";
+  const esquerda = [13, 14, 15, 16, 19, 21, 24, 38].includes(t);
+  const k = [9, 16, 18, 19, 20, 21, 23, 24, 27, 37, 38].includes(t) ? "leveDir" : [10, 15].includes(t) ? "dir" : [11, 14].includes(t) ? "forteDir" : [12, 13].includes(t) ? "retorno" : t === 26 ? "rotatoria" : "reto";
+  // o desenho base é para a direita (retorno: para a esquerda); espelha quando precisa
+  const espelhar = k === "retorno" ? t === 12 : esquerda;
+  return `<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><g${espelhar ? ' transform="translate(64 0) scale(-1 1)"' : ""}>${SETA[k]}</g></svg>`;
+}
 const ICONE = t => ({ 1: "↑", 2: "↑", 3: "↑", 4: "🏁", 5: "🏁", 6: "🏁", 7: "↑", 8: "↑", 9: "↗", 10: "↱", 11: "↘", 12: "⤸", 13: "⤹", 14: "↙", 15: "↰", 16: "↖",
   17: "↑", 18: "↗", 19: "↖", 20: "↗", 21: "↖", 22: "↑", 23: "↗", 24: "↖", 25: "↑", 26: "⟳", 27: "↗", 37: "↗", 38: "↖" }[t] || "↑");
 function prepararRota(r) {
@@ -842,9 +909,7 @@ function iniciarNav(simular) {
   const r = prepararRota(OPCOES[SEL]);
   NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
   estado("nav"); $("btnVoltar").hidden = true; $("alerta").hidden = true; $("chipSim").hidden = !simular;
-  rotaLayer.clearLayers();
-  NAV.linhaFundo = L.polyline(r.linha, { color: "#fff", weight: 12, opacity: .95 }).addTo(rotaLayer);
-  NAV.linha = L.polyline(r.linha, { color: COR.rota, weight: 8 }).addTo(rotaLayer);
+  mostrarLinhas([r.linha], 0);
   destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(); desenharCameras();
   pedirTelaAcesa(); atualizarVozUI();
   // a primeira fala precisa sair do toque no botão (exigência do iPhone)
@@ -852,13 +917,13 @@ function iniciarNav(simular) {
   falar(simular ? "Simulação iniciada. " + (p1 ? p1.agora : "") : (p1 ? p1.agora : "Siga a rota."), true);
   if (simular) iniciarSimulacao(r);
   else { iniciarGps(); if (ultimaPos) passoNavegacao(); }
-  if (!ultimaPos && !simular) map.setView(r.linha[0], 17);
+  if (!ultimaPos && !simular) map.easeTo({ center: ll(...r.linha[0]), zoom: 17 });
 }
 function encerrarNav() {
   NAV = null; pararSimulacao();
   try { wakeLock && wakeLock.release(); } catch {} wakeLock = null;
   try { speechSynthesis.cancel(); } catch {}
-  setBearing(0); atualizarCarro();
+  resetVista(); atualizarCarro();
 }
 $("btnSair").onclick = () => { encerrarNav(); estado("rotas"); selecionar(SEL, true); };
 // Trocar destino: abre a busca sem parar a navegação; "Cancelar" volta para a viagem
@@ -867,7 +932,7 @@ $("btnTrocar").onclick = () => {
   destinoAntes = { pt: pts.d, txt: $("d").value };
   document.body.classList.add("trocando");
   if (ultimaPos && navigator.geolocation) { origemGps = true; pts.o = { lat: ultimaPos[0], lon: ultimaPos[1], nome: "Minha localização" }; $("o").value = "Minha localização"; }
-  pts.d = null; $("d").value = ""; setBearing(0); estado("busca"); atualizarBotoesBusca(); $("d").focus();
+  pts.d = null; $("d").value = ""; resetVista(); estado("busca"); atualizarBotoesBusca(); $("d").focus();
 };
 function cancelarTroca() {
   document.body.classList.remove("trocando"); fecharTeclado();
@@ -876,32 +941,19 @@ function cancelarTroca() {
 }
 
 // usuário arrastou o mapa: para de seguir; volta sozinho depois de 10 s
-map.on("dragstart", () => {
-  if (!NAV) return;
-  NAV.seguir = false; $("btnVoltar").hidden = false;
-  clearTimeout(NAV.tVolta);
-});
-map.on("dragend zoomend", () => { if (NAV && !NAV.seguir) { clearTimeout(NAV.tVolta); NAV.tVolta = setTimeout(voltarAMim, VOLTA_S * 1000); } });
+function soltouMapa() { if (!NAV || document.body.dataset.estado !== "nav") return; NAV.seguir = false; $("btnVoltar").hidden = false; clearTimeout(NAV.tVolta); }
+map.on("dragstart", soltouMapa);
+map.on("zoomstart", e => { if (e.originalEvent) soltouMapa(); });
+for (const ev of ["dragend", "zoomend"]) map.on(ev, () => { if (NAV && !NAV.seguir) { clearTimeout(NAV.tVolta); NAV.tVolta = setTimeout(voltarAMim, VOLTA_S * 1000); } });
 function voltarAMim() { if (!NAV) return; NAV.seguir = true; $("btnVoltar").hidden = true; seguirCarro(true); }
 $("btnVoltar").onclick = voltarAMim;
 function seguirCarro(forcar) {
   if (!NAV || !ultimaPos || (!NAV.seguir && !forcar) || document.body.dataset.estado !== "nav") return;
-  const em3d = document.body.classList.contains("em3d");
-  const z = em3d ? (velGps && velGps > 60 ? 17 : 18) : (velGps && velGps > 60 ? 16 : 17);
-  const h = rumoAtual ?? 0;
-  // deixa o carro na parte de baixo da tela, mostrando mais do caminho à frente
-  const mPorPx = 156543.03 * Math.cos(ultimaPos[0] * RAD) / Math.pow(2, z);
-  const H = window.innerHeight;
-  let ajustePx = H * 0.18;
-  if (em3d) {
-    // mapa inclinado 45° com perspectiva 700px (fuga no topo): onde o carro precisa ficar no mapa para aparecer a 66% da altura da tela
-    const p = 700, c = Math.SQRT1_2, alvo = 0.66 * H;
-    const s = p * (H - alvo) / (c * (p + alvo)); // distância, em px do mapa, da borda de baixo até o carro
-    ajustePx = $("mapa").offsetHeight / 2 - s;
-  }
-  const centro = deslocar(ultimaPos, ajustePx * mPorPx, h);
-  setBearing(-h);
-  map.setView(centro, z, { animate: !forcar, duration: .8 });
+  const em3d = document.body.classList.contains("em3d"), rapido = velGps && velGps > 60;
+  const H = map.getContainer().clientHeight;
+  // inclinado como num navegador de carro; o espaço extra no topo deixa a seta na parte de baixo da tela
+  map.easeTo({ center: ll(...ultimaPos), zoom: em3d ? (rapido ? 16.6 : 17.4) : (rapido ? 16 : 17), bearing: rumoAtual ?? map.getBearing(),
+    pitch: em3d ? 62 : 0, padding: { top: Math.round(H * (em3d ? 0.40 : 0.30)), bottom: 0, left: 0, right: 0 }, duration: forcar ? 400 : 950, easing: t => t, essential: true });
   atualizarCarro();
 }
 // localiza o carro na rota: trecho mais próximo, distância até a linha e quanto já percorreu
@@ -925,15 +977,18 @@ function passoNavegacao() {
   // chegada
   if (distM(ultimaPos, r.linha[r.linha.length - 1]) < CHEGOU_M || resta < CHEGOU_M) {
     N.chegou = true; falar("Você chegou ao destino.", true);
-    $("manIco").textContent = "🏁"; $("manDist").textContent = "Chegou"; $("manRua").textContent = pts.d ? pts.d.nome : "";
-    setTimeout(() => { if (NAV === N) { encerrarNav(); estado("busca"); rotaLayer.clearLayers(); destaque = new Set(); if (marcaD) { map.removeLayer(marcaD); marcaD = null; } pts.d = null; $("d").value = ""; desenharCameras(); } }, 6000);
+    $("manIco").textContent = "🏁"; $("manProg").style.width = "100%"; $("manDist").textContent = "Chegou"; $("manRua").textContent = pts.d ? pts.d.nome : "";
+    setTimeout(() => { if (NAV === N) { encerrarNav(); estado("busca"); limparRotas(); destaque = new Set(); tirarDestino(); pts.d = null; $("d").value = ""; desenharCameras(); } }, 6000);
     return;
   }
   // próxima conversão
   const prox = r.passos.find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] > N.along + 5);
   if (prox) {
     const dist = r.cum[Math.min(prox.idx, r.cum.length - 1)] - N.along, k = r.passos.indexOf(prox);
-    $("manIco").textContent = ICONE(prox.tipo); $("manDist").textContent = fmtDist(dist); $("manRua").textContent = prox.rua || prox.txt;
+    $("manIco").innerHTML = iconeManobra(prox.tipo); $("manDist").textContent = fmtDist(dist); $("manRua").textContent = prox.rua || prox.txt;
+    // barra de progresso até a próxima conversão
+    const ant = r.passos[k - 1], ini = ant ? r.cum[Math.min(ant.idx, r.cum.length - 1)] : 0, trecho = r.cum[Math.min(prox.idx, r.cum.length - 1)] - ini;
+    $("manProg").style.width = `${Math.max(0, Math.min(100, 100 * (1 - dist / (trecho || 1))))}%`;
     if (dist <= 450 && dist > 150 && !N.falado.has(k + "a")) { N.falado.add(k + "a"); falar(`Em ${fmt(Math.round(dist / 50) * 50)} metros, ${prox.alerta.charAt(0).toLowerCase()}${prox.alerta.slice(1)}`); }
     if (dist <= 60 && !N.falado.has(k + "b")) { N.falado.add(k + "a"); N.falado.add(k + "b"); falar(prox.agora, true); }
   }
@@ -959,6 +1014,10 @@ function passoNavegacao() {
   if (limite && velGps != null && velGps > limite + TOLERANCIA_KMH && agora - N.ultAvisoVel > AVISO_VEL_S * 1000) { N.ultAvisoVel = agora; falar(`Atenção, o limite aqui é ${limite} quilômetros por hora.`); }
   // chegada e distância
   $("navKm").textContent = fmtDist(resta);
+  $("navMin").textContent = `${fmt(Math.max(1, Math.round(r.min * (resta / r.total))))} min`;
+  // rua em que o carro está agora
+  const atual = [...r.passos].reverse().find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] <= N.along + 1);
+  $("ruaAtual").textContent = atual && atual.rua ? atual.rua.replace(/^Avenida /, "Av. ").replace(/^Rua /, "R. ").replace(/^Alameda /, "Al. ") : "";
   $("navChegada").textContent = hora(new Date(agora + r.min * 60000 * (resta / r.total)));
   seguirCarro();
 }
@@ -972,7 +1031,7 @@ async function recalcular() {
     if (NAV !== N) return;
     classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
     N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
-    N.linhaFundo.setLatLngs(nova.linha); N.linha.setLatLngs(nova.linha);
+    mostrarLinhas([nova.linha], 0);
     destaque = new Set(nova.cams.map(c => c.id)); desenharCameras();
     if (SIM) SIM.rota = N.rota, SIM.along = 0;
   } catch { /* tenta de novo no próximo intervalo */ }
@@ -1064,7 +1123,7 @@ arrastavel($("alcaBusca"), $("busca"), () => { if (document.body.classList.conta
 
 // visão 3D na navegação
 let vis3d = store.get("vis3d", true);
-function aplicar3d() { document.body.classList.toggle("em3d", vis3d); for (const b of $("vis3d").children) b.setAttribute("aria-pressed", String(b.dataset.v === (vis3d ? "1" : "0"))); map.invalidateSize({ pan: false }); }
+function aplicar3d() { document.body.classList.toggle("em3d", vis3d); for (const b of $("vis3d").children) b.setAttribute("aria-pressed", String(b.dataset.v === (vis3d ? "1" : "0"))); if (NAV) seguirCarro(true); }
 for (const b of $("vis3d").children) b.onclick = () => { vis3d = b.dataset.v === "1"; store.set("vis3d", vis3d); aplicar3d(); };
 aplicar3d();
 
@@ -1087,7 +1146,7 @@ function aplicarTema() {
   let noite;
   if (tema === "auto") { const agora = new Date(), [nasce, poe] = solHoje(agora); noite = agora < nasce || agora > poe; }
   else noite = tema === "escuro";
-  document.body.classList.toggle("noite", noite);
+  document.body.classList.toggle("noite", noite); trocarBase(noite);
   document.querySelector('meta[name="theme-color"]').content = noite ? "#0f1419" : "#1764c4";
   for (const b of $("tema").children) b.setAttribute("aria-pressed", String(b.dataset.v === tema));
 }
