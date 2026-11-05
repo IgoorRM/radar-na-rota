@@ -22,6 +22,8 @@ body.noite { --bg:#0f1419; --panel:#1b232c; --fg:#e9eef3; --muted:#9aa8b6; --lin
 [hidden] { display: none !important; }
 html.curto { --sb: 0px; }
 /* iPhone, app instalado: diz ter a tela inteira mas não desenha os últimos ~47 pt; sobe tudo que fica embaixo */
+/* app instalado no iPhone: o iOS desfoca o topo além da barra de status; desce o conteúdo da faixa de cima */
+html.ios-app { --topo: 30px; }
 html.corte { --sb: 0px; --st: max(47px, env(safe-area-inset-top, 0px)); --cb: 47px; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
@@ -120,14 +122,14 @@ ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14
 
 /* ---------- estado: navegação ---------- */
 #manobra { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: #0b0e12; color: #fff; border-radius: 0 0 18px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.4);
-  display: flex; gap: 12px; align-items: center; padding: calc(8px + var(--st)) 16px 10px; overflow: hidden; min-height: calc(68px + var(--st)); }
+  display: flex; gap: 12px; align-items: center; padding: calc(8px + var(--st) + var(--topo, 0px)) 16px 10px; overflow: hidden; min-height: calc(68px + var(--st) + var(--topo, 0px)); }
 #manIco { width: 46px; height: 46px; flex: none; display: grid; place-items: center; font-size: 32px; }
 #manIco svg { width: 46px; height: 46px; }
 #manDist { font-size: 24px; font-weight: 800; line-height: 1.1; color: #fff; }
 #manRua { font-size: 18px; font-weight: 700; color: #5cb6ff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #manobra .txt { min-width: 0; }
 #manProg { position: absolute; left: 0; bottom: 0; height: 5px; background: #5cb6ff; width: 0; transition: width .8s linear; }
-#alerta { position: fixed; top: calc(92px + var(--st)); left: 10px; right: 10px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
+#alerta { position: fixed; top: calc(92px + var(--st) + var(--topo, 0px)); left: 10px; right: 10px; z-index: 1000; background: var(--cam); color: #fff; border-radius: 16px; padding: 10px 14px; font-weight: 700; box-shadow: var(--sombra); display: flex; gap: 12px; align-items: center; }
 #alerta big { font-size: 24px; }
 #navBase { position: fixed; left: 0; right: 0; bottom: calc(0px + var(--cb, 0px)); z-index: 1000; background: #15191f; color: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -4px 14px rgba(0,0,0,.35); padding: 8px 14px calc(6px + max(0px, var(--sb) - 20px)); display: grid; gap: 2px; }
 body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
@@ -147,9 +149,10 @@ body:not(.noite) #navBase { background: var(--panel); color: var(--fg); }
 #veloAtual.acima { background: var(--cam); } #veloAtual.acima small { color: #fff; }
 #placa { width: 44px; height: 44px; margin-left: -14px; margin-top: -10px; border-radius: 50%; background: #fff; border: 5px solid #d1222f; color: #111; display: grid; place-items: center; font-weight: 800; font-size: 16px; box-shadow: var(--sombra); }
 #btnVoltar { position: fixed; right: 12px; bottom: calc(max(0px, var(--sb) - 20px) + 150px + var(--cb, 0px)); z-index: 950; background: #0b0e12; color: #fff; box-shadow: var(--sombra); border-radius: 999px; padding: 12px 16px; }
-#chipSim { position: fixed; left: 12px; top: calc(96px + var(--st)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
-#btnVoz { position: fixed; right: 12px; top: calc(96px + var(--st)); width: 48px; height: 48px; font-size: 22px; background: #0b0e12; color: #fff; }
-#alerta:not([hidden]) ~ #btnVoz, #alerta:not([hidden]) ~ #chipSim { top: calc(164px + var(--st)); }
+#semGps { position: fixed; left: 50%; transform: translateX(-50%); top: calc(96px + var(--st) + var(--topo, 0px)); z-index: 960; background: #ffb300; color: #222; font-weight: 800; font-size: 13px; border-radius: 999px; padding: 7px 12px; box-shadow: var(--sombra); }
+#chipSim { position: fixed; left: 12px; top: calc(96px + var(--st) + var(--topo, 0px)); z-index: 950; background: #ffb300; color: #222; font-weight: 800; font-size: 12px; border-radius: 999px; padding: 6px 10px; box-shadow: var(--sombra); }
+#btnVoz { position: fixed; right: 12px; top: calc(96px + var(--st) + var(--topo, 0px)); width: 48px; height: 48px; font-size: 22px; background: #0b0e12; color: #fff; }
+#alerta:not([hidden]) ~ #btnVoz, #alerta:not([hidden]) ~ #chipSim { top: calc(164px + var(--st) + var(--topo, 0px)); }
 
 /* ---------- botões do mapa e ajustes ---------- */
 #btnAjustes { right: 12px; top: calc(12px + var(--st)); }
@@ -245,6 +248,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
 <div id="manobra" class="so-nav"><div id="manIco"></div><div class="txt"><div id="manDist">—</div><div id="manRua">Siga a rota</div></div><div id="manProg"></div></div>
 <div id="alerta" class="so-nav" hidden></div>
 <div id="chipSim" class="so-nav" hidden>SIMULAÇÃO</div>
+<div id="semGps" class="so-nav" hidden>📡 Sem sinal de GPS</div>
 <button id="btnVoz" class="flut so-nav" aria-label="Ligar ou desligar a voz">🔊</button>
 <div id="velo" class="so-nav"><div id="veloAtual"><div><b id="veloNum">–</b><small>km/h</small></div></div><div id="placa" hidden></div></div>
 <div id="ruaAtual" class="so-nav"></div>
@@ -274,6 +278,9 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
     <div><b>Histórico de destinos</b><div class="dica">Guarda só no aparelho os últimos 20 destinos (saída, destino e data). O trajeto não é gravado.</div></div>
     <div class="seg" id="histLig"><button data-v="1">Ligado</button><button data-v="0">Desligado</button></div>
     <div class="links"><a href="#" id="apagarHist">Apagar histórico</a></div>
+    <div><b>Trânsito ao vivo (opcional)</b><div class="dica">Com uma chave gratuita da TomTom, o tempo das rotas e a chegada usam o trânsito de agora. A chave fica só neste aparelho. Crie em <a href="https://developer.tomtom.com/" target="_blank" rel="noopener">developer.tomtom.com</a> (plano grátis, 2.500 consultas por dia).</div></div>
+    <div class="campo" style="background:var(--soft);border-radius:14px;display:flex;gap:8px;padding:4px 6px 4px 12px"><input id="chaveTT" type="text" placeholder="Cole aqui a chave da TomTom" autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;min-width:0;border:0;background:none;color:var(--fg);font:15px system-ui;padding:10px 0;outline:none"><button id="salvarTT">Salvar</button></div>
+    <div class="dica" id="statusTT"></div>
     <div><b>Ajuste da borda de baixo</b><div class="dica">Use "Subir" se a barra de baixo aparecer cortada no app instalado.</div></div>
     <div class="seg" id="corteSel"><button data-v="auto">Automático</button><button data-v="sim">Subir</button><button data-v="nao">Normal</button></div>
     <div class="dica" id="diagTela"></div>
@@ -295,7 +302,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
       <h3>Privacidade (LGPD)</h3>
       <ul>
         <li>O app não tem cadastro, login, servidor próprio, anúncios, cookies de rastreamento nem coleta de estatísticas.</li>
-        <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (OSRM, OpenStreetMap/FOSSGIS e Photon/komoot) quando você pede uma rota, um endereço, ou quando a rota é recalculada durante a navegação.</li>
+        <li>A localização só é usada se você permitir. Ela é processada no seu aparelho e enviada apenas aos serviços de rota e de endereço (TomTom, se você salvar uma chave; OSRM, OpenStreetMap/FOSSGIS e Photon/komoot) quando você pede uma rota, um endereço, ou quando a rota é recalculada durante a navegação.</li>
         <li>O app guarda no próprio aparelho (armazenamento local do navegador) apenas suas preferências, uma cópia da lista pública de câmeras e, se o histórico estiver ligado, os últimos 20 destinos (saída, destino e data). O trajeto não é gravado. O histórico pode ser apagado ou desligado nos Ajustes. Para apagar, limpe os dados do site no navegador.</li>
         <li>As falas da navegação são geradas pelo próprio aparelho.</li>
         <li>Os serviços de terceiros recebem seu endereço IP e seguem as próprias políticas de privacidade.</li>
@@ -306,6 +313,7 @@ body[data-estado="nav"] .carro .seta { transform: scale(1.4); }
         <li>Radares extras: pontos de radar de velocidade (highway=speed_camera) cadastrados por voluntários no <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, numa cópia guardada no app, quando não constam do painel da CET.</li>
         <li>Mapa, dados viários e limites de velocidade: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>, licença ODbL. Desenho do mapa: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> e <a href="https://openmaptiles.org" target="_blank" rel="noopener">OpenMapTiles</a>.</li>
         <li>Rotas: <a href="https://project-osrm.org/" target="_blank" rel="noopener">OSRM</a> (servidor de demonstração do projeto) para os caminhos e o tempo estimado, e <a href="https://valhalla.github.io/valhalla/" target="_blank" rel="noopener">Valhalla</a>, servidor público mantido pela FOSSGIS e.V., para as instruções e o desvio de radares.</li>
+        <li>Trânsito ao vivo (só se você salvar uma chave): <a href="https://developer.tomtom.com/" target="_blank" rel="noopener">TomTom</a> Routing API. A chave e as consultas saem do seu aparelho direto para a TomTom.</li>
         <li>Busca de endereços: <a href="https://photon.komoot.io/" target="_blank" rel="noopener">Photon</a> (komoot) e <a href="https://nominatim.org/" target="_blank" rel="noopener">Nominatim</a>, com dados do OpenStreetMap.</li>
         <li>Biblioteca de mapa: <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> (BSD-3).</li>
       </ul>
@@ -348,6 +356,7 @@ function medirFalta() {
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const telaToda = Math.abs(window.innerHeight - (window.innerWidth < window.innerHeight ? screen.height : screen.width)) < 3;
   const manual = store.get("corte", "auto"); // ajuste manual nos Ajustes, caso a detecção erre
+  document.documentElement.classList.toggle("ios-app", instalado && ios);
   document.documentElement.classList.toggle("corte", manual === "sim" || (manual === "auto" && instalado && ios && telaToda));
   const dg = document.getElementById("diagTela");
   if (dg) dg.textContent = `Tela: ${screen.width}×${screen.height} · área ${window.innerWidth}×${window.innerHeight} · instalado: ${instalado ? "sim" : "não"} · ajuste de borda: ${document.documentElement.classList.contains("corte") ? "ligado" : "desligado"}`;
@@ -598,10 +607,38 @@ async function calcularOpcoes(o, d, tipos) {
   // trânsito típico do horário (não há fonte gratuita de trânsito ao vivo)
   const f = fatorTransito(new Date());
   for (const r of ops) { r.minLivre = r.min; r.min = r.min * f; }
+  if (chaveTT) await Promise.all(ops.map(r => tempoTomTom(r.linha).then(t => { if (t) { r.min = t.min; r.aoVivo = true; } })));
   return ops;
 }
 // Multiplica o tempo sem trânsito conforme o dia e a hora em São Paulo.
 // O tempo sem trânsito do OSRM já é otimista (não conta semáforos), por isso nunca fica abaixo de 1,15.
+// ---------- trânsito ao vivo pela TomTom (se o usuário salvou uma chave) ----------
+let chaveTT = store.get("chaveTT", "");
+async function tempoTomTom(linha) {
+  if (!chaveTT || !linha || linha.length < 2) return null;
+  const pts = [linha[0], ...amostrar(linha, 6), linha[linha.length - 1]].map(([la, lo]) => `${la.toFixed(6)},${lo.toFixed(6)}`).join(":");
+  try {
+    const r = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/${pts}/json?key=${encodeURIComponent(chaveTT)}&traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&routeRepresentation=summaryOnly`);
+    if (!r.ok) return null;
+    const s = (await r.json()).routes?.[0]?.summary;
+    return s ? { min: s.travelTimeInSeconds / 60, atraso: (s.trafficDelayInSeconds || 0) / 60 } : null;
+  } catch { return null; }
+}
+function atualizarTTUI(msg) {
+  $("chaveTT").value = chaveTT ? chaveTT.slice(0, 4) + "••••••••" + chaveTT.slice(-4) : "";
+  $("statusTT").textContent = msg || (chaveTT ? "Chave salva: trânsito ao vivo ligado." : "Sem chave: usa o trânsito típico do horário.");
+}
+$("chaveTT").addEventListener("focus", () => { if (chaveTT) $("chaveTT").value = ""; });
+$("salvarTT").onclick = async () => {
+  const v = $("chaveTT").value.trim();
+  if (!v) { chaveTT = ""; store.set("chaveTT", ""); atualizarTTUI("Chave removida."); return; }
+  if (v.includes("••")) { atualizarTTUI(); return; }
+  const antes = chaveTT; chaveTT = v; atualizarTTUI("Testando a chave…");
+  const t = await tempoTomTom([[-23.6086, -46.6498], [-23.6105, -46.6378]]);
+  if (t) { store.set("chaveTT", v); atualizarTTUI(`Chave funcionando: trânsito ao vivo ligado.`); }
+  else { chaveTT = antes; atualizarTTUI("A chave não funcionou. Confira se copiou inteira e se a Routing API está liberada nela."); }
+};
+atualizarTTUI();
 function fatorTransito(d) {
   const dia = d.getDay(), h = d.getHours() + d.getMinutes() / 60, util = dia >= 1 && dia <= 5;
   if (util && ((h >= 7 && h < 10) || (h >= 17 && h < 20))) return 1.5;   // pico
@@ -940,7 +977,9 @@ function atualizarCarro() {
   carro.getElement().classList.toggle("semdir", rumoAtual === null);
 }
 // recebe posição do GPS real ou da simulação
+let ultimoFix = 0;
 function novaPosicao(p) {
+  ultimoFix = Date.now();
   const pos = [p.lat, p.lon];
   velGps = p.speed != null && p.speed >= 0 ? p.speed * 3.6 : null;
   if (p.heading != null && !isNaN(p.heading) && (velGps === null || velGps > 4)) { rumoAtual = p.heading; posRumo = pos; }
@@ -951,6 +990,7 @@ function novaPosicao(p) {
   atualizarCarro();
   if (NAV) passoNavegacao();
 }
+setInterval(() => { const sem = !!NAV && !SIM && Date.now() - ultimoFix > 8000; if ($("semGps").hidden === sem) $("semGps").hidden = !sem; }, 2000);
 function iniciarGps() {
   if (gpsWatch !== null || !navigator.geolocation) return;
   gpsWatch = navigator.geolocation.watchPosition(p => { if (!SIM) novaPosicao({ lat: p.coords.latitude, lon: p.coords.longitude, speed: p.coords.speed, heading: p.coords.heading }); },
@@ -1000,6 +1040,7 @@ async function abrirRotas() {
     const ops = await calcularOpcoes(pts.o, pts.d, tiposMarcados());
     if (n !== calcSeq) return;
     OPCOES = ops; $("msgRotas").innerHTML = ""; $("notaTempo").hidden = false;
+    $("notaTempo").textContent = ops.some(r => r.aoVivo) ? "Tempo com o trânsito de agora (TomTom); na viagem, se atualiza." : "Tempo com o trânsito típico do horário; na viagem, ajusta pela sua velocidade.";
     selecionar(0, true);
   } catch (e) {
     if (n !== calcSeq) return;
@@ -1212,7 +1253,7 @@ function passoNavegacao() {
   // próxima conversão (enquanto recalcula, mantém o aviso "Recalculando…")
   const prox = N.recalculando ? null : r.passos.find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] > N.along + 5);
   if (prox) {
-    const dist = r.cum[Math.min(prox.idx, r.cum.length - 1)] - N.along, k = r.passos.indexOf(prox);
+    const dist = N.foraDesde ? distM(ultimaPos, r.linha[Math.min(prox.idx, r.linha.length - 1)]) : r.cum[Math.min(prox.idx, r.cum.length - 1)] - N.along, k = r.passos.indexOf(prox);
     $("manIco").innerHTML = iconeManobra(prox.tipo); $("manDist").textContent = fmtDist(dist); $("manRua").textContent = prox.rua || prox.txt;
     // barra de progresso até a próxima conversão
     const ant = r.passos[k - 1], ini = ant ? r.cum[Math.min(ant.idx, r.cum.length - 1)] : 0, trecho = r.cum[Math.min(prox.idx, r.cum.length - 1)] - ini;
@@ -1264,7 +1305,12 @@ function passoNavegacao() {
     }
   }
   N.fatorTempo = fator;
-  const restaMin = r.min * (resta / r.total) * fator;
+  if (chaveTT && !N.recalculando && !N.foraDesde && (!N.ttEm || agora - N.ttEm > 120000) && resta > 300) {
+    N.ttEm = agora; const restaQ = resta, rotaQ = r;
+    tempoTomTom([ultimaPos, ...r.linha.slice(N.idx)]).then(t => { if (t && NAV === N && N.rota === rotaQ) { N.ttRazao = t.min / Math.max(0.1, r.min * (restaQ / r.total)); } });
+  }
+  // com trânsito ao vivo, a razão vem da TomTom; sem, do ritmo real do carro
+  const restaMin = r.min * (resta / r.total) * (N.ttRazao || fator);
   $("navMin").textContent = `${fmt(Math.max(1, Math.round(restaMin)))} min`;
   // rua em que o carro está agora
   const atual = [...r.passos].reverse().find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] <= N.along + 1);
@@ -1308,7 +1354,7 @@ async function recalcular() {
 function aplicarRotaNova(N, nova, tipos) {
   classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
   N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
-  N.amostras = []; N.inicioAndando = null; N.fatorTempo = 1;
+  N.amostras = []; N.inicioAndando = null; N.fatorTempo = 1; N.ttRazao = null; N.ttEm = 0;
   mostrarLinhas([nova.linha], 0);
   destaque = new Set(nova.cams.map(c => c.id)); desenharCameras();
   if (SIM) SIM.rota = N.rota, SIM.along = 0;
