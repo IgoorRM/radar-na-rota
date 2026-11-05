@@ -323,7 +323,7 @@ const VALHALLA = "https://valhalla1.openstreetmap.de";
 const PHOTON = "https://photon.komoot.io/api/";
 // câmera "na rota": até 20 m da linha. Entre 20 e 35 m costuma ser a pista oposta, um viaduto ou um cruzamento: aparece como "perto da rota"
 const HIT_M = 20, PERTO_M = 35, CORREDOR_M = 600, MAX_EXCLUIR = 50, TENTATIVAS = 4, CACHE_DIAS = 7;
-const ALERTA_M = 300, FORA_M = 50, FORA_S = 4, RECALC_MIN_S = 20, CHEGOU_M = 30, TOLERANCIA_KMH = 5, AVISO_VEL_S = 30, VOLTA_S = 10;
+const ALERTA_M = 300, FORA_M = 45, FORA_S = 3, RECALC_MIN_S = 8, CHEGOU_M = 30, TOLERANCIA_KMH = 5, AVISO_VEL_S = 30, VOLTA_S = 10;
 const LEG = { R: "Rodízio", V: "Velocidade", A: "Avanço de semáforo", P: "Parada sobre a faixa", EXD: "Faixa exclusiva (dir.)", EXE: "Faixa exclusiva (esq.)",
   MT: "Motocicletas", CPD: "Conversão proib. dir.", CPE: "Conversão proib. esq.", S: "Trânsito seletivo", F: "ZMRF – Fretado", Z: "ZMRC – Caminhão", VR: "VER – Caminhão", PR: "Faixa proib. caminhão" };
 // padrão: todos os tipos que valem para carro (os de caminhão, moto e fretado ficam desmarcados)
@@ -481,7 +481,9 @@ function lerTrip(trip) {
 // vias: pontos de passagem (o Valhalla segue o caminho por eles sem parar)
 // areas: radares a excluir por um triângulo em volta (pega todas as pistas ali); semRodovia: evita vias expressas
 async function valhalla(o, d, excluir = [], alternativas = 0, vias = [], { areas = [], semRodovia = false } = {}) {
-  const body = { locations: [{ lat: o.lat, lon: o.lon }, ...vias.map(([lat, lon]) => ({ lat, lon, type: "through" })), { lat: d.lat, lon: d.lon }],
+  const saida = { lat: o.lat, lon: o.lon };
+  if (o.rumo != null) { saida.heading = Math.round(o.rumo); saida.heading_tolerance = 60; }
+  const body = { locations: [saida, ...vias.map(([lat, lon]) => ({ lat, lon, type: "through" })), { lat: d.lat, lon: d.lon }],
                  costing: "auto", units: "km", language: "pt-BR", exclude_locations: excluir.map(c => ({ lat: c.lat, lon: c.lon })) };
   if (areas.length) body.exclude_polygons = areas.map(triangulo);
   if (semRodovia) body.costing_options = { auto: { use_highways: 0 } };
@@ -492,7 +494,8 @@ async function valhalla(o, d, excluir = [], alternativas = 0, vias = [], { areas
   return [lerTrip(j.trip), ...(j.alternates || []).map(a => lerTrip(a.trip))];
 }
 async function osrm(o, d) {
-  const r = await fetch(`${OSRM}${o.lon},${o.lat};${d.lon},${d.lat}?alternatives=3&overview=full&geometries=geojson`);
+  const dir = o.rumo != null ? `&bearings=${Math.round((o.rumo + 360) % 360)},60;` : "";
+  const r = await fetch(`${OSRM}${o.lon},${o.lat};${d.lon},${d.lat}?alternatives=3&overview=full&geometries=geojson${dir}`);
   const j = await r.json();
   if (!r.ok || j.code !== "Ok") throw new Error("OSRM: " + (j.message || r.status));
   return j.routes.map(x => ({ linha: x.geometry.coordinates.map(([lon, lat]) => [lat, lon]), min: x.duration / 60, km: x.distance / 1000 }));
@@ -1132,7 +1135,7 @@ document.addEventListener("visibilitychange", () => { if (NAV && document.visibi
 function iniciarNav(simular) {
   if (!simular) salvarDestino(); // a simulação não entra no histórico
   const r = prepararRota(OPCOES[SEL]);
-  NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: Date.now(), falado: new Set(), camFalada: new Set(), camEtapa: new Map(), amostras: [], ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
+  NAV = { rota: r, pref: r.pref, idx: 0, along: 0, foraDesde: null, ultimoRecalc: 0, falado: new Set(), camFalada: new Set(), camEtapa: new Map(), amostras: [], ultAvisoVel: 0, seguir: true, tVolta: null, recalculando: false, chegou: false };
   estado("nav"); $("btnVoltar").hidden = true; $("alerta").hidden = true; $("chipSim").hidden = !simular;
   mostrarLinhas([r.linha], 0);
   destaque = new Set(r.cams.map(c => c.id)); pertoIds = new Set(); desenharCameras();
@@ -1206,8 +1209,8 @@ function passoNavegacao() {
     setTimeout(() => { if (NAV === N) { encerrarNav(); estado("busca"); limparRotas(); destaque = new Set(); tirarDestino(); pts.d = null; $("d").value = ""; desenharCameras(); } }, 6000);
     return;
   }
-  // próxima conversão
-  const prox = r.passos.find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] > N.along + 5);
+  // próxima conversão (enquanto recalcula, mantém o aviso "Recalculando…")
+  const prox = N.recalculando ? null : r.passos.find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] > N.along + 5);
   if (prox) {
     const dist = r.cum[Math.min(prox.idx, r.cum.length - 1)] - N.along, k = r.passos.indexOf(prox);
     $("manIco").innerHTML = iconeManobra(prox.tipo); $("manDist").textContent = fmtDist(dist); $("manRua").textContent = prox.rua || prox.txt;
@@ -1269,21 +1272,47 @@ function passoNavegacao() {
   $("navChegada").textContent = hora(new Date(agora + restaMin * 60000));
   seguirCarro();
 }
+// Recálculo rápido (1 a 2 s): OSRM a partir de onde o carro está, na direção em que ele vai, e Valhalla só para as instruções.
+// Mantém a preferência da opção escolhida. Se ela era "sem radares", a busca completa continua em segundo plano.
 async function recalcular() {
   const N = NAV; N.recalculando = true; N.ultimoRecalc = Date.now();
-  falar("Recalculando.", true); $("manDist").textContent = "Recalculando…"; $("manRua").textContent = "";
+  falar("Recalculando.", true); $("manDist").textContent = "Recalculando…"; $("manRua").textContent = ""; $("manIco").textContent = "↻";
+  const tipos = tiposMarcados();
+  const o = { lat: ultimaPos[0], lon: ultimaPos[1], rumo: rumoAtual };
   try {
-    const o = { lat: ultimaPos[0], lon: ultimaPos[1] }, tipos = tiposMarcados();
-    const ops = await calcularOpcoes(o, pts.d, tipos);
-    const nova = ops.find(x => x.pref === N.pref) || ops.find(x => /Mais rápida/.test(x.tag)) || ops[0];
+    let candidatas = [];
+    try { candidatas = await osrm(o, pts.d); } catch {}
+    for (const c of candidatas) c.cams = camerasNaRota(c.linha, tipos);
+    let nova;
+    if (candidatas.length) {
+      const escolhida = N.pref === "rapida" ? candidatas[0] : candidatas.reduce((a, b) => (b.cams.length < a.cams.length || (b.cams.length === a.cams.length && b.min < a.min)) ? b : a);
+      try { [nova] = await valhalla(o, pts.d, [], 0, amostrar(escolhida.linha)); nova.min = escolhida.min * fatorTransito(new Date()); }
+      catch { [nova] = await valhalla(o, pts.d); nova.min = nova.minV * .6 * fatorTransito(new Date()); }
+    } else { [nova] = await valhalla(o, pts.d); nova.min = nova.minV * .6 * fatorTransito(new Date()); }
     if (NAV !== N) return;
-    classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
-    N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
-    mostrarLinhas([nova.linha], 0);
-    destaque = new Set(nova.cams.map(c => c.id)); desenharCameras();
-    if (SIM) SIM.rota = N.rota, SIM.along = 0;
+    aplicarRotaNova(N, nova, tipos);
+    // "sem radares": procura em segundo plano; troca só se achar menos radares e o carro ainda estiver no começo do trecho novo
+    if (N.pref === "zero" && nova.cams.length) {
+      const fator = nova.min / (nova.minV || nova.min);
+      cadeiaZero(o, pts.d, tipos, fator, true).then(rs => {
+        if (NAV !== N || !rs.length) return;
+        const melhor = rs.reduce(melhorPorRadar);
+        if (melhor.cams.length < N.rota.cams.length && N.along < 300 && distM(ultimaPos, [o.lat, o.lon]) < 400) {
+          aplicarRotaNova(N, melhor, tipos); falar("Encontrei um caminho com menos radares.");
+        }
+      }).catch(() => {});
+    }
   } catch { /* tenta de novo no próximo intervalo */ }
   finally { N.recalculando = false; N.ultimoRecalc = Date.now(); }
+}
+function aplicarRotaNova(N, nova, tipos) {
+  classificarCameras(nova, tipos); nova.pref = N.pref; nova.tag = OPCOES[SEL]?.tag;
+  N.rota = prepararRota(nova); N.idx = 0; N.along = 0; N.foraDesde = null; N.falado = new Set();
+  N.amostras = []; N.inicioAndando = null; N.fatorTempo = 1;
+  mostrarLinhas([nova.linha], 0);
+  destaque = new Set(nova.cams.map(c => c.id)); desenharCameras();
+  if (SIM) SIM.rota = N.rota, SIM.along = 0;
+  passoNavegacao();
 }
 
 // ================= simulação (testar sem dirigir) =================
