@@ -344,6 +344,8 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const store = { get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
                 set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const fmtDist = m => m < 1000 ? `${fmt(Math.max(10, Math.round(m / 10) * 10))} m` : `${fmt(m / 1000, 1)} km`;
+// tempo de viagem: até 59 min em minutos; a partir de 1 hora, "1 h 05 min"
+const fmtTempo = min => { const t = Math.max(1, Math.round(min)); return t < 60 ? `${t} min` : `${Math.floor(t / 60)} h ${String(t % 60).padStart(2, "0")} min`; };
 const hora = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 // No app instalado no iPhone (barra de status translúcida), a área do app pode terminar antes da borda de baixo,
 // numa faixa preta que fica no lugar da barrinha de gestos. Detecta isso para não somar a margem de segurança de novo.
@@ -1065,7 +1067,7 @@ function selecionar(i, ajustarVista) {
   OPCOES.forEach((r, j) => {
     const b = document.createElement("button"); b.type = "button"; b.className = "card" + (j === SEL ? " sel" : "");
     const n = r.cams.length;
-    b.innerHTML = `<span class="tag">${esc(r.tag)}</span><span class="min">${fmt(r.min)} min</span><small>${fmt(r.km, 1)} km</small>
+    b.innerHTML = `<span class="tag">${esc(r.tag)}</span><span class="min">${fmtTempo(r.min)}</span><small>${fmt(r.km, 1)} km</small>
       ${r.via.length ? `<span class="via">via ${esc(r.via.join(" e "))}</span>` : ""}
       <span class="chip ${n ? "tem" : "zero"}">${n ? `📷 ${n} radar${n > 1 ? "es" : ""}` : "✓ 0 radares"} ›</span>`;
     b.onclick = e => {
@@ -1080,7 +1082,7 @@ function selecionar(i, ajustarVista) {
   const r = OPCOES[SEL];
   $("listaPassos").innerHTML = r.passos.map(p => `<li>${esc(p.txt)} ${p.km ? `<small>${fmtDist(p.km * 1000)}</small>` : ""}</li>`).join("");
   $("btnIr").disabled = false;
-  $("btnIr").textContent = `Ir · ${fmt(r.min)} min`;
+  $("btnIr").textContent = `Ir · ${fmtTempo(r.min)}`;
   // mostra o trajeto inteiro da rota escolhida entre o topo e o painel de baixo
   enquadrar([r.linha], map.getContainer().getBoundingClientRect().bottom - $("folhaRotas").getBoundingClientRect().top + 20);
 }
@@ -1311,7 +1313,7 @@ function passoNavegacao() {
   }
   // com trânsito ao vivo, a razão vem da TomTom; sem, do ritmo real do carro
   const restaMin = r.min * (resta / r.total) * (N.ttRazao || fator);
-  $("navMin").textContent = `${fmt(Math.max(1, Math.round(restaMin)))} min`;
+  $("navMin").textContent = fmtTempo(restaMin);
   // rua em que o carro está agora
   const atual = [...r.passos].reverse().find(p => r.cum[Math.min(p.idx, r.cum.length - 1)] <= N.along + 1);
   $("ruaAtual").textContent = atual && atual.rua ? atual.rua.replace(/^Avenida /, "Av. ").replace(/^Rua /, "R. ").replace(/^Alameda /, "Al. ") : "";
