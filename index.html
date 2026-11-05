@@ -593,6 +593,14 @@ async function calcularOpcoes(o, d, tipos) {
   }
   const unicas = [];
   for (const r of todas) if (!unicas.some(u => parecida(u, r))) unicas.push(r);
+  // tempo com trânsito ANTES de escolher as opções (senão a ordem pode inverter):
+  // trânsito típico do horário e, se houver chave, o trânsito de agora pela TomTom
+  const f = fatorTransito(new Date());
+  for (const r of unicas) { r.minLivre = r.min; r.min = r.min * f; }
+  if (chaveTT) {
+    const consultar = [...unicas].sort((a, b) => a.cams.length - b.cams.length || a.min - b.min).slice(0, 12);
+    await Promise.all(consultar.map(r => tempoTomTom(r.linha).then(t => { if (t) { r.min = t.min; r.aoVivo = true; } })));
+  }
   const maisRapida = unicas.reduce((a, b) => b.min < a.min ? b : a);
   const zero = unicas.reduce(melhorPorRadar);
   const ops = [];
@@ -606,14 +614,8 @@ async function calcularOpcoes(o, d, tipos) {
   }
   // se sobrou espaço, completa com a 2ª mais rápida
   for (const r of [...unicas].sort((a, b) => a.min - b.min)) if (ops.length < 3 && !ops.includes(r)) ops.push(Object.assign(r, { tag: ops.some(x => x.tag === "Alternativa") ? "Outra opção" : "Alternativa", pref: "rapida" }));
-  // trânsito típico do horário (não há fonte gratuita de trânsito ao vivo)
-  const f = fatorTransito(new Date());
-  for (const r of ops) { r.minLivre = r.min; r.min = r.min * f; }
-  if (chaveTT) await Promise.all(ops.map(r => tempoTomTom(r.linha).then(t => { if (t) { r.min = t.min; r.aoVivo = true; } })));
   return ops;
 }
-// Multiplica o tempo sem trânsito conforme o dia e a hora em São Paulo.
-// O tempo sem trânsito do OSRM já é otimista (não conta semáforos), por isso nunca fica abaixo de 1,15.
 // ---------- trânsito ao vivo pela TomTom (se o usuário salvou uma chave) ----------
 let chaveTT = store.get("chaveTT", "");
 async function tempoTomTom(linha) {
@@ -641,6 +643,8 @@ $("salvarTT").onclick = async () => {
   else { chaveTT = antes; atualizarTTUI("A chave não funcionou. Confira se copiou inteira e se a Routing API está liberada nela."); }
 };
 atualizarTTUI();
+// Multiplica o tempo sem trânsito conforme o dia e a hora em São Paulo.
+// O tempo sem trânsito do OSRM já é otimista (não conta semáforos), por isso nunca fica abaixo de 1,15.
 function fatorTransito(d) {
   const dia = d.getDay(), h = d.getHours() + d.getMinutes() / 60, util = dia >= 1 && dia <= 5;
   if (util && ((h >= 7 && h < 10) || (h >= 17 && h < 20))) return 1.5;   // pico

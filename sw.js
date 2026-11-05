@@ -1,5 +1,5 @@
 // Guarda a "casca" do app para abrir rápido; rotas, endereços e câmeras sempre vêm da rede.
-const CACHE = "radar-na-rota-v24";
+const CACHE = "radar-na-rota-v25";
 const ARQUIVOS = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "radares_osm.json",
   "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css",
   "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"];
